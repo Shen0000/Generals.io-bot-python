@@ -1,3 +1,3 @@
-USER_ID='G3nera1'
+USER_ID='userid'
 GAME_ID='cilr'
 USER_NAME='[Bot]General'
