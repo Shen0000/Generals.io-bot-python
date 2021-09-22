@@ -10,7 +10,7 @@ MOUNTAIN = -2
 FOG = -3
 OBSTACLE = -4
 
-_ENDPOINT = "ws://botws.generals.io/socket.io/?EIO=3&transport=websocket"
+_ENDPOINT = "wss://botws.generals.io/socket.io/?EIO=3&transport=websocket"
 _REPLAY_URL = "http://bot.generals.io/replays/"
 
 _RESULTS = {
