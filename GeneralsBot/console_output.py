@@ -36,7 +36,7 @@ def game_output(state, ranks=None):
 
 
     clear()
-    print('Turn '+ turn)
+    print(f"Turn: {turn}")
 
     title='\t'
     for x in range(0,len(tiles[0])):

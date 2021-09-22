@@ -39,6 +39,7 @@ class Generals(object):
             if gameid is None:
                 raise ValueError("Gameid must be provided for private games")
             self._send(["join_private", gameid, userid])
+            print(f"Joined a custom game at link http://bot.generals.io/games/{gameid}")
 
         elif mode == "1v1":
             self._send(["join_1v1", userid])
@@ -107,6 +108,8 @@ class Generals(object):
             elif msg[0] in ["game_won", "game_lost"]:
                 yield self._make_result(msg[0], msg[1])
                 break
+            elif msg[0] == "queue_update":
+                logging.info("queue update {}".format(msg[1]))
             else:
                 logging.info("Unknown message type: {}".format(msg))
 
