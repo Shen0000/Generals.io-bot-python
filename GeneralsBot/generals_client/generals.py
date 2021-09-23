@@ -2,6 +2,7 @@ import logging
 import json
 import threading
 import time
+import ssl
 from websocket import create_connection, WebSocketConnectionClosedException
 
 
@@ -26,7 +27,7 @@ class Generals(object):
     def __init__(self, userid, username, mode="1v1", gameid=None,
                  force_start=True, region=None):
         logging.debug("Creating connection")
-        self._ws = create_connection(_ENDPOINT)
+        self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs":ssl.CERT_NONE})
         self._lock = threading.RLock()
 
         logging.debug("Starting heartbeat thread")
