@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.DEBUG)
 # our_flag=first_update['player_index']
 # general_y, general_x =first_update['generals'][our_flag]
 turn=0
-rows=20
-cols=20
+rows=40
+cols=40
 our_flag=0
 
 general_y, general_x =0,0

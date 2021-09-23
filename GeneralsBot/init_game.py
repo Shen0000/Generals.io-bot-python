@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 # general = generals.Generals('your userid', 'your username', 'ffa')
 
 # private game
-general = generals.Generals(USER_ID, USER_NAME, 'private', GAME_ID, True)
+general = generals.Generals(USER_ID, USER_NAME, 'private', GAME_ID)
 
 # print USER_ID
 # print GAME_ID

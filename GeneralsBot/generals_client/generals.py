@@ -55,6 +55,7 @@ class Generals(object):
         else:
             raise ValueError("Invalid mode")
 
+        time.sleep(0.5)
         self._send(["set_force_start", gameid, force_start])
 
         self._seen_update = False
@@ -64,6 +65,7 @@ class Generals(object):
         self._map = []
         self._cities = []
 
+    
     def move(self, y1, x1, y2, x2, move_half=False):
         if not self._seen_update:
             raise ValueError("Cannot move before first map seen")
