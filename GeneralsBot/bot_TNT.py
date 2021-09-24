@@ -193,7 +193,6 @@ def what_tiles_we_have():
 
 
 for state in general.get_updates():
-
     # get position of your general
     our_flag = state['player_index']
     try:
@@ -207,6 +206,7 @@ for state in general.get_updates():
     tiles = state['tile_grid']
     armies = state['army_grid']
     cities = state['cities']
+    swamps = state['swamps']
     generals_list = state['generals']
 
     # move_to units from general to arbitrary square

@@ -4,12 +4,20 @@ import threading
 import time
 import ssl
 from websocket import create_connection, WebSocketConnectionClosedException
+from config import STORE_REPLAY
 
 
 EMPTY = -1
 MOUNTAIN = -2
 FOG = -3
 OBSTACLE = -4
+
+'''
+swamp locations are given at the beginning of the game as a single value. 
+The whole grid is represented as a line:
+0  1  2  3  4  5  6  7  8  9
+10 11 12 13 14 15 16 17 18 19 ...etc
+'''
 
 _ENDPOINT = "wss://botws.generals.io/socket.io/?EIO=3&transport=websocket"
 _REPLAY_URL = "http://bot.generals.io/replays/"
@@ -65,6 +73,7 @@ class Generals(object):
         self._stars = []
         self._map = []
         self._cities = []
+        self._swamps = []
 
     
     def move(self, y1, x1, y2, x2, move_half=False):
@@ -106,6 +115,9 @@ class Generals(object):
             elif msg[0] == "game_start":
                 logging.info("Game info: {}".format(msg[1]))
                 self._start_data = msg[1]
+                if STORE_REPLAY: #store the replay link in a separate file
+                    with open("replays.txt", "a") as results:
+                        results.write(_REPLAY_URL + msg[1]['replay_id'] + '\n')
             elif msg[0] == "game_update":
                 yield self._make_update(msg[1])
             elif msg[0] in ["game_won", "game_lost"]:
@@ -149,6 +161,7 @@ class Generals(object):
             'generals': [(-1, -1) if g == -1 else (g // cols, g % cols)
                          for g in data['generals']],
             'cities': [(c // cols, c % cols) for c in self._cities],
+            'swamps': self._start_data['swamps'],
             'usernames': self._start_data['usernames'],
             'teams': self._start_data.get('teams'),
             'stars': self._stars,
