@@ -8,7 +8,7 @@ Generals.io bot made in python
 
 run ```pip install -r requirements.txt```
 
-Create a ```config.py``` file and a ```replays.txt``` file
+Create a ```config.py```
 
 in the ```config.py``` you will have 4 variables:
 
@@ -22,4 +22,4 @@ in the ```config.py``` you will have 4 variables:
 
 change these variables for your personal bot
 
-you do not need to edit the ```replays.txt``` file
+you do not need to make the ```replays.txt``` file
