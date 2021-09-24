@@ -6,19 +6,19 @@ Generals.io bot made in python
 
 # Instructions
 
-run pip install -r requirements.txt
+run ```pip install -r requirements.txt```
 
-Create a "config.py" file and a "replays.txt" file
-in the config.py you will have 4 variables:
+Create a ```config.py``` file and a ```replays.txt``` file
+in the ```config.py``` you will have 4 variables:
 
-USER_ID='your_id'
+```USER_ID='your_id'```
 
-GAME_ID='gameid'
+```GAME_ID='gameid'```
 
-USER_NAME='botid'
+```USER_NAME='botid'```
 
-STORE_REPLAY=True
+```STORE_REPLAY=True```
 
 change these variables for your personal bot
 
-you do not need to edit the replays.txt file
+you do not need to edit the ```replays.txt``` file
