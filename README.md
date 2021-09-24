@@ -9,8 +9,11 @@ Create a "config.py" file and a "replays.txt" file
 in the config.py you will have 4 variables:
 
 USER_ID='your_id'
+
 GAME_ID='gameid'
+
 USER_NAME='botid'
+
 STORE_REPLAY=True
 
 change these variables for your personal bot
