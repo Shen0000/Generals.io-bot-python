@@ -11,6 +11,7 @@ def game_output(state, ranks=None):
     tiles=state['tile_grid']
     armies=state['army_grid']
     cities=state['cities']
+    swamps=state['swamps']
 
     # basic info
     rows=state['rows']
@@ -56,6 +57,8 @@ def game_output(state, ranks=None):
                 l='M'
             elif tile==OBSTACLE:
                 l='O'
+            elif (y,x) in swamps:
+                l='S'
             elif (y,x) in cities:
                 l='C'
             else:

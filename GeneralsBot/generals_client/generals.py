@@ -139,7 +139,8 @@ class Generals(object):
 
         rows, cols = self._map[1], self._map[0]
         self._seen_update = True
-
+        if self._swamps==[]:
+            self._swamps=[(c // cols, c % cols) for c in self._start_data['swamps']]
         # sort by player index
         scores = {d['i']: d for d in data['scores']}
         scores = [scores[i] for i in range(len(scores))]
@@ -161,7 +162,7 @@ class Generals(object):
             'generals': [(-1, -1) if g == -1 else (g // cols, g % cols)
                          for g in data['generals']],
             'cities': [(c // cols, c % cols) for c in self._cities],
-            'swamps': self._start_data['swamps'],
+            'swamps': self._swamps,
             'usernames': self._start_data['usernames'],
             'teams': self._start_data.get('teams'),
             'stars': self._stars,
@@ -220,3 +221,4 @@ def _apply_diff(cache, diff):
         i += 1
 
     assert i == len(diff)
+
