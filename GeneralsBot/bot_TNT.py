@@ -3,12 +3,14 @@ import logging
 from generals_client import generals
 import math
 
-enermy_capital_value=1000
-enermy_city_value=100
-empty_city_value=50
+INF = 1e9
+
+enemy_capital_value=INF
+enemy_city_value=100
+empty_city_value=INF
 our_city_value=10
 empty_tile_value=4
-enerymy_tile_value=2
+enemy_tile_value=2
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -105,20 +107,20 @@ def get_tiles_with_priority():
 def get_priority_of_destination(is_a_capital, is_a_city, is_ours, is_empty, have_soldiers):
     p = 0
 
-    if is_a_capital and  is_ours ==False : #enermies capital
-        p += enermy_capital_value
+    if is_a_capital and  is_ours ==False : #enemies capital
+        p += enemy_capital_value
     elif is_a_city:
         if  is_ours: #our city
             p+=our_city_value
         elif is_empty: # empty city
             p += empty_city_value
         else: # it belongs to enermies
-            p += enermy_city_value
+            p += enemy_city_value
     elif is_empty: # empty tile
         p += empty_tile_value
 
-    elif is_ours == False and have_soldiers: #enermy tile
-        p += enerymy_tile_value
+    elif is_ours == False and have_soldiers: #enemy tile
+        p += enemy_tile_value
 
     return p
 

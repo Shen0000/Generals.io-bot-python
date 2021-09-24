@@ -9,6 +9,7 @@ Generals.io bot made in python
 run ```pip install -r requirements.txt```
 
 Create a ```config.py``` file and a ```replays.txt``` file
+
 in the ```config.py``` you will have 4 variables:
 
 ```USER_ID='your_id'```
