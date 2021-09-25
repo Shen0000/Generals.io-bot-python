@@ -59,7 +59,7 @@ for state in general.get_updates():
         for x in range(rows):
             for y in range(cols):
                 t = tiles[x][y]
-                if t==1 or t==0:
+                if t==our_flag:
                     pre.append((x, y+1))
                     pre.append((x, y-1))
                     pre.append((x+1, y))
