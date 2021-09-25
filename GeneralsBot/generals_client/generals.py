@@ -83,7 +83,7 @@ class Generals(object):
         cols = self._map[0]
         a = x1 * cols + y1
         b = x2 * cols + y2
-        print(a, b)
+        # print(a, b)
         self._send(["attack", a, b, move_half, self._move_id])
         self._move_id += 1
 

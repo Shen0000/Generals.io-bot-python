@@ -10,28 +10,31 @@ def closest(r, c, x, y, arr, armies, cities):
         if (vis[a][b] or arr[a][b]==-2 or (a, b) in cities):
             continue
         vis[a][b]=True
-        if (armies[a][b]>1 and (arr[a][b]==1 or arr[a][b]==0)):
+        if (armies[a][b]>1 and (arr[a][b] >= 0)):  # should be arr[a][b] == our_flag
             return (a, b, dist)
         else:
             if (a+1<r):
                 if(not vis[a+1][b]):
                     queue.append((a+1, b, dist))
-            
+
             if (a-1>=0):
                 if (not vis[a-1][b]):
                     queue.append((a-1, b, dist))
-            
+
             if (b+1<c):
                 if (not vis[a][b+1]):
                     queue.append((a, b+1, dist))
-            
+
             if (b-1>=0):
                 if (not vis[a][b-1]):
                     queue.append((a, b-1, dist))
     return (-1, -1, -1)
 
-def manhattan_dist(r, c, x, y, gx, gy, arr, cities, id):
-    if (arr[x][y] not in (-1, id) or (x,y) in cities):
+
+def manhattan_dist(r, c, x, y, gx, gy, arr, cities, id, attack=False):
+    if (not attack) and (arr[x][y] not in (-1, id) or (x,y) in cities):
+        return 1000000
+    elif (not attack) and (arr[x][y] not in (-1, 0, 1) or (x,y) in cities):
         return 1000000
     queue=[(x, y, 0)]
     vis=[[False for _ in range(c)] for _ in range(r)]
@@ -50,17 +53,17 @@ def manhattan_dist(r, c, x, y, gx, gy, arr, cities, id):
             if (a+1<r):
                 if(not vis[a+1][b]):
                     queue.append((a+1, b, dist))
-            
+
             if (a-1>=0):
                 if (not vis[a-1][b]):
                     queue.append((a-1, b, dist))
-            
+
             if (b+1<c):
                 if (not vis[a][b+1]):
                     queue.append((a, b+1, dist))
-            
+
             if (b-1>=0):
                 if (not vis[a][b-1]):
                     queue.append((a, b-1, dist))
 
-
+    return 1000000
