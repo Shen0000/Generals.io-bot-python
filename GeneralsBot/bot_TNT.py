@@ -49,7 +49,7 @@ def get_distance(position1,position2):
     return math.fabs(position1[0]-position2[0])+math.fabs(position1[1]-position2[1])
 
 def how_far_from_general(position):
-    return (position, general_position)
+    return (get_distance(position, general_position))
 
 
 # def is_inland(y,x):
@@ -210,7 +210,9 @@ for state in general.get_updates():
     cities = state['cities']
     swamps = state['swamps']
     generals_list = state['generals']
-
+    if cities != []:
+        print(state)
+        break
     # move_to units from general to arbitrary square
     # for dy, dx in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
     #     if (0 <= general_y+dy < state['rows'] and 0 <= general_x+dx < state['cols']

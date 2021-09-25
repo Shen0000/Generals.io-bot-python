@@ -76,13 +76,14 @@ class Generals(object):
         self._swamps = []
 
     
-    def move(self, y1, x1, y2, x2, move_half=False):
+    def move(self, x1, y1, x2, y2, move_half=False):
         if not self._seen_update:
             raise ValueError("Cannot move before first map seen")
 
         cols = self._map[0]
-        a = y1 * cols + x1
-        b = y2 * cols + x2
+        a = x1 * cols + y1
+        b = x2 * cols + y2
+        print(a, b)
         self._send(["attack", a, b, move_half, self._move_id])
         self._move_id += 1
 
