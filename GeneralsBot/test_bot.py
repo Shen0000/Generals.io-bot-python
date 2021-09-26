@@ -38,7 +38,6 @@ def main():
         swamps = state['swamps']
         generals_list = state['generals']
 
-        print(mode)
         if mode != "rush":
             if turn > 800:
                 mode = "consolidate"
@@ -50,9 +49,10 @@ def main():
             else:
                 mode = "explore"
 
-        if done_exploring and mode == "explore":
-            mode = "consolidate"
+            if done_exploring and mode == "explore":
+                mode = "consolidate"
 
+        print(mode)
         if mode == "explore":
             pre = []
             empty = []
@@ -80,6 +80,9 @@ def main():
                 empty = sorted(empty, key=lambda x: (x[5]))
                 best = empty[i]
                 a, b = best[2:4]
+                if armies[a][b] == 0:
+                    continue
+
                 c, d = best[:2]
                 print(a, b, c, d)
                 moves = []
@@ -119,8 +122,8 @@ def main():
 
                     t = tiles[r][c]
                     if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
-                        d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag) * 2 + 3)
-                        if armies[r][c] * math.log(d) > max_army:
+                        d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag) * 10 + 1)
+                        if armies[r][c] * d > max_army:
                             max_army = armies[r][c] * d
                             max_tiles = [(r, c)]
             #             elif armies[r][c] == max_army:
@@ -153,7 +156,7 @@ def main():
                     moves.append(
                         (a, b + 1, manhattan_dist(rows, cols, a, b + 1, general_r, general_c, tiles, cities, our_flag)))
             moves = sorted(moves, key=lambda x: x[2])
-            if len(moves):
+            if len(moves) and mode != "rush":
                 bm = moves[0]
                 general.move(a, b, bm[0], bm[1])
             else:
@@ -161,13 +164,20 @@ def main():
                 main_army = (general_r, general_c)
 
         elif mode == "rush":
-            if armies[main_army[0]][main_army[1]] < 100:
+            if armies[main_army[0]][main_army[1]] < 100 and turn % 2 == 1:
                 mode = "consolidate"
                 main_army = (general_r, general_c)
 
             pre = []
             empty = []
             r, c = main_army
+
+            assert len(state["armies"]) == 2, "Assuming 1v1"
+            enemy_flag = 1 - our_flag
+
+            if generals_list[enemy_flag] != (-1, -1):
+                rush_target = generals_list[enemy_flag]
+
             if rush_target == (-1, -1) or rush_target == main_army:
                 far = farthest(rows, cols, our_flag, tiles, cities)
                 print(f"Updating rush target to {far}")
