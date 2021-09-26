@@ -69,21 +69,22 @@ def main():
                 if pair[0] < 0 or pair[0] >= rows or pair[1] < 0 or pair[1] >= cols:
                     continue
                 if tiles[pair[0]][pair[1]] == -1:
-                    a, b, d = closest(rows, cols, pair[0], pair[1], tiles, armies, cities)
+                    a, b, d = closest(rows, cols, pair[0], pair[1], our_flag, tiles, armies, cities)
                     if a != -1 and b != -1 and d != -1:
+                        # print(armies[a][b])
                         empty.append((pair[0], pair[1], a, b, d,
                                       manhattan_dist(rows, cols, pair[0], pair[1], general_r, general_c, tiles, cities,
-                                                     our_flag) / (pair[2] + 1)))
+                                                     our_flag)))
 
             moved = False
             for i in range(len(empty)):
                 empty = sorted(empty, key=lambda x: (x[5]))
                 best = empty[i]
                 a, b = best[2:4]
-                if armies[a][b] == 0:
+                c, d = best[:2]
+                if armies[a][b] == 0 or tiles[c][d] != -1:  # TODO: figure out why this is needed, tiles[c][d] should be empty
                     continue
 
-                c, d = best[:2]
                 print(a, b, c, d)
                 moves = []
                 if a - 1 >= 0:
@@ -122,7 +123,8 @@ def main():
 
                     t = tiles[r][c]
                     if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
-                        d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag) * 10 + 1)
+                        # d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) * 10 + 1)
+                        d = math.sqrt(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) + 1)
                         if armies[r][c] * d > max_army:
                             max_army = armies[r][c] * d
                             max_tiles = [(r, c)]
@@ -140,26 +142,27 @@ def main():
             a, b = farthest_tile
             moves = []
             if a - 1 >= 0:
-                if tiles[a - 1][b] in (-1, our_flag):
+                if tiles[a - 1][b] in (-1, our_flag, 0 , 1):
                     moves.append(
-                        (a - 1, b, manhattan_dist(rows, cols, a - 1, b, general_r, general_c, tiles, cities, our_flag)))
+                        (a - 1, b, manhattan_dist(rows, cols, a - 1, b, general_r, general_c, tiles, cities, our_flag, attack=True)))
             if a + 1 < rows:
-                if tiles[a + 1][b] in (-1, our_flag):
+                if tiles[a + 1][b] in (-1, our_flag, 0 , 1):
                     moves.append(
-                        (a + 1, b, manhattan_dist(rows, cols, a + 1, b, general_r, general_c, tiles, cities, our_flag)))
+                        (a + 1, b, manhattan_dist(rows, cols, a + 1, b, general_r, general_c, tiles, cities, our_flag, attack=True)))
             if b - 1 >= 0:
-                if tiles[a][b - 1] in (-1, our_flag):
+                if tiles[a][b - 1] in (-1, our_flag, 0 , 1):
                     moves.append(
-                        (a, b - 1, manhattan_dist(rows, cols, a, b - 1, general_r, general_c, tiles, cities, our_flag)))
+                        (a, b - 1, manhattan_dist(rows, cols, a, b - 1, general_r, general_c, tiles, cities, our_flag, attack=True)))
             if b + 1 < cols:
-                if tiles[a][b + 1] in (-1, our_flag):
+                if tiles[a][b + 1] in (-1, our_flag, 0 , 1):
                     moves.append(
-                        (a, b + 1, manhattan_dist(rows, cols, a, b + 1, general_r, general_c, tiles, cities, our_flag)))
+                        (a, b + 1, manhattan_dist(rows, cols, a, b + 1, general_r, general_c, tiles, cities, our_flag, attack=True)))
             moves = sorted(moves, key=lambda x: x[2])
             if len(moves) and mode != "rush":
                 bm = moves[0]
                 general.move(a, b, bm[0], bm[1])
             else:
+                print("out of moves, rushing")
                 mode = "rush"
                 main_army = (general_r, general_c)
 
@@ -176,6 +179,7 @@ def main():
             enemy_flag = 1 - our_flag
 
             if generals_list[enemy_flag] != (-1, -1):
+                print(f"Enemy general found at: {generals_list[enemy_flag]}")
                 rush_target = generals_list[enemy_flag]
 
             if rush_target == (-1, -1) or rush_target == main_army:

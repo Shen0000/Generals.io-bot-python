@@ -1,4 +1,4 @@
-def closest(r, c, x, y, arr, armies, cities):
+def closest(r, c, x, y, our_flag, arr, armies, cities):
     vis = [[False for _ in range(c)] for _ in range(r)]
     queue=[(x, y, 0)]
     while (len(queue)>0):
@@ -10,8 +10,8 @@ def closest(r, c, x, y, arr, armies, cities):
         if (vis[a][b] or arr[a][b]==-2 or (a, b) in cities):
             continue
         vis[a][b]=True
-        if (armies[a][b]>1 and (arr[a][b] >= 0)):  # should be arr[a][b] == our_flag
-            return (a, b, dist)
+        if armies[a][b]>1 and arr[a][b] == our_flag:
+            return a, b, dist
         else:
             if (a+1<r):
                 if(not vis[a+1][b]):
