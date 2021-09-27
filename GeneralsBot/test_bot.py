@@ -78,27 +78,23 @@ def main():
 
             moved = False
             for i in range(len(empty)):
-                empty = sorted(empty, key=lambda x: (x[5]))
+                empty = sorted(empty, key=lambda x: (x[4], x[5]))
                 best = empty[i]
                 a, b = best[2:4]
                 c, d = best[:2]
-                if armies[a][b] == 0 or tiles[c][d] != -1:  # TODO: figure out why this is needed, tiles[c][d] should be empty
+                if armies[a][b] <= 1 or tiles[c][d] != -1:  # TODO: figure out why this is needed, tiles[c][d] should be empty
                     continue
 
                 print(a, b, c, d)
                 moves = []
-                if a - 1 >= 0:
-                    if tiles[a - 1][b] in (-1, our_flag):
-                        moves.append((a - 1, b, manhattan_dist(rows, cols, a - 1, b, c, d, tiles, cities, our_flag)))
-                if a + 1 < rows:
-                    if tiles[a + 1][b] in (-1, our_flag):
-                        moves.append((a + 1, b, manhattan_dist(rows, cols, a + 1, b, c, d, tiles, cities, our_flag)))
-                if b - 1 >= 0:
-                    if tiles[a][b - 1] in (-1, our_flag):
-                        moves.append((a, b - 1, manhattan_dist(rows, cols, a, b - 1, c, d, tiles, cities, our_flag)))
-                if b + 1 < cols:
-                    if tiles[a][b + 1] in (-1, our_flag):
-                        moves.append((a, b + 1, manhattan_dist(rows, cols, a, b + 1, c, d, tiles, cities, our_flag)))
+                if a - 1 >= 0 and tiles[a - 1][b] >= -1:
+                    moves.append((a - 1, b, manhattan_dist(rows, cols, a - 1, b, c, d, tiles, cities, our_flag, attack=True)))
+                if a + 1 < rows and tiles[a + 1][b] >= -1:
+                    moves.append((a + 1, b, manhattan_dist(rows, cols, a + 1, b, c, d, tiles, cities, our_flag, attack=True)))
+                if b - 1 >= 0 and tiles[a][b - 1] >= -1:
+                    moves.append((a, b - 1, manhattan_dist(rows, cols, a, b - 1, c, d, tiles, cities, our_flag, attack=True)))
+                if b + 1 < cols and tiles[a][b + 1] >= -1:
+                    moves.append((a, b + 1, manhattan_dist(rows, cols, a, b + 1, c, d, tiles, cities, our_flag, attack=True)))
                 moves = sorted(moves, key=lambda x: x[2])
                 if len(moves):
                     bm = moves[0]
