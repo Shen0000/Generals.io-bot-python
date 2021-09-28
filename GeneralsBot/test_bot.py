@@ -116,7 +116,6 @@ def main():
 
             farthest_tile = max_tiles[0]
 
-            print(a, b)
             a, b = farthest_tile
             moves = []
             for offset in OFFSETS:
@@ -149,8 +148,8 @@ def main():
                 enemy_general = generals_list[enemy_flag]
 
             if rush_target is None or rush_target == main_army:
-                # far = farthest(rows, cols, our_flag, tiles, cities)
-                far = utils.farthest2(general_r, general_c, our_flag, tiles, armies, cities)
+                far = utils.farthest(our_flag, tiles, cities)
+                # far = utils.farthest2(general_r, general_c, our_flag, tiles, armies, cities)
                 print(f"Updating rush target to {far}")
                 rush_target = far
 

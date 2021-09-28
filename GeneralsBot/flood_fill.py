@@ -10,7 +10,6 @@ class GeneralUtils:
             curr = queue.pop(0)
             a, b = curr[:2]
             dist = curr[2] + 1
-            print(a,b)
             if vis[a][b] or tiles[a][b] == -2 or (a, b) in cities:
                 continue
             vis[a][b] = True
