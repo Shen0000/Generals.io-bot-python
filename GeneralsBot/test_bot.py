@@ -54,20 +54,19 @@ def main():
                         for offset in OFFSETS:
                             pre.append((r + offset[0], c + offset[1]))
 
-            for pair in pre:
-                if pair[0] < 0 or pair[0] >= rows or pair[1] < 0 or pair[1] >= cols:
+            for (r, c) in pre:
+                if not utils.in_bounds(r, c) or tiles[r][c] != -1:
                     continue
-                if tiles[pair[0]][pair[1]] == -1:
-                    a, b, d = utils.closest(pair[0], pair[1], our_flag, tiles, armies, cities)
-                    if (a, b, d) != (-1, -1, -1):
-                        # print(armies[a][b])
-                        empty.append((pair[0], pair[1], a, b, d,
-                                      utils.manhattan_dist(pair[0], pair[1], general_r, general_c, tiles, cities,
-                                                     our_flag)))
+
+                a, b, d = utils.closest(r, c, our_flag, tiles, armies, cities)
+                if (a, b, d) != (-1, -1, -1):
+                    empty.append((r, c, a, b, d,
+                                  utils.manhattan_dist(r, c, general_r, general_c, tiles, cities, our_flag))
+                                 )
 
             moved = False
+            empty = sorted(empty, key=lambda x: (x[4], x[5]))
             for i in range(len(empty)):
-                empty = sorted(empty, key=lambda x: (x[4], x[5]))
                 best = empty[i]
                 a, b = best[2:4]
                 c, d = best[:2]
@@ -89,8 +88,10 @@ def main():
                     general.move(a, b, bm[0], bm[1])
                     moved = True
                     break
+
             if not moved and turn % 2 == 0:
                 done_exploring = True
+
         elif mode == "consolidate":
             max_tiles = []
             max_army = 0
@@ -112,24 +113,17 @@ def main():
                         if armies[r][c] * d > max_army:
                             max_army = armies[r][c] * d
                             max_tiles = [(r, c)]
-            #             elif armies[r][c] == max_army:
-            #                 max_tiles.append((r, c))
-            #
-            farthest_tile = max_tiles[0]
-            # farthest_dist = manhattan_dist(rows, cols, farthest_tile[0], farthest_tile[1], general_r, general_c, tiles, cities, our_flag)
-            # for max_tile in max_tiles[1:]:
-            #     dist = manhattan_dist(rows, cols, max_tile[0], max_tile[1], general_r, general_c, tiles, cities, our_flag)
-            #     if dist > farthest_dist:
-            #         farthest_dist = dist
-            #         farthest_tile = max_tile
 
+            farthest_tile = max_tiles[0]
+
+            print(a, b)
             a, b = farthest_tile
             moves = []
             for offset in OFFSETS:
                 if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
                     moves.append(
                         (a + offset[0], b + offset[1],
-                         utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
+                         utils.manhattan_dist(a + offset[0], b + offset[1], general_r, general_c, tiles, cities, our_flag, attack=True))
                     )
 
             moves = sorted(moves, key=lambda x: x[2])
