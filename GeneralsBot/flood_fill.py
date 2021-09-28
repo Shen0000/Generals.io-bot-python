@@ -1,4 +1,9 @@
+OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+OBSTACLES = [-2, -4]
+
+
 class GeneralUtils:
+
     def __init__(self, rows, cols):
         self.rows = rows
         self.cols = cols
@@ -111,41 +116,26 @@ class GeneralUtils:
 
         return -1, -1
 
-
-    def manhattan_dist(self, x, y, gx, gy, arr, cities, id, attack=False):
-        if (not attack) and (arr[x][y] not in (-1, id) or (x, y) in cities):
+    def manhattan_dist(self, r, c, tr, tc, arr, cities, id, attack=False):
+        if (not attack) and (arr[r][c] not in (-1, id) or (r, c) in cities):
             return 1000000
-        elif attack and (arr[x][y] not in (-1, 0, 1) or (x, y) in cities):
+        elif attack and (arr[r][c] not in (-1, 0, 1) or (r, c) in cities):
             return 1000000
-        queue = [(x, y, 0)]
+        queue = [(r, c, 0)]
         vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
         while len(queue):
-            curr = queue[0]
-            queue.pop(0)
+            curr = queue.pop(0)
             dist = curr[2] + 1
-            a = curr[0]
-            b = curr[1]
-            if (vis[a][b] or arr[a][b] == -2 or (a, b) in cities):
+            a , b = curr[:2]
+            if vis[a][b] or arr[a][b] in OBSTACLES or (a, b) in cities:
                 continue
             vis[a][b] = True
-            if (a == gx and b == gy):
+            if a == tr and b == tc:
                 return dist
             else:
-                if (a + 1 < self.rows):
-                    if (not vis[a + 1][b]):
-                        queue.append((a + 1, b, dist))
-
-                if (a - 1 >= 0):
-                    if (not vis[a - 1][b]):
-                        queue.append((a - 1, b, dist))
-
-                if (b + 1 < self.cols):
-                    if (not vis[a][b + 1]):
-                        queue.append((a, b + 1, dist))
-
-                if (b - 1 >= 0):
-                    if (not vis[a][b - 1]):
-                        queue.append((a, b - 1, dist))
+                for offset in OFFSETS:
+                    if self.in_bounds(a + offset[0], b + offset[1]) and arr[a + offset[0]][b + offset[1]] >= -1:
+                        queue.append((a+offset[0], b+offset[1], dist))
 
         return 1000000
 
