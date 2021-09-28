@@ -137,7 +137,7 @@ def main():
         elif mode == "rush":
             main_army=utils.find_main(tiles, armies, our_flag) #update main army to account for server lag
 
-            if armies[main_army[0]][main_army[1]] < 100 and turn % 2 == 1:
+            if armies[main_army[0]][main_army[1]] < 100:
                 print("consolidating because not enough troops")
                 mode = "consolidate"
                 main_army = (general_r, general_c)
