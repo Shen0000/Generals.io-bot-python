@@ -1,42 +1,34 @@
 import logging
 import math
 
-from flood_fill import closest, farthest, manhattan_dist
+from flood_fill import GeneralUtils
 from init_game import general
+
 
 logging.basicConfig(level=logging.DEBUG)
 
-turn = 0
-our_flag = 0
 
-tiles = []
-armies = []
-cities = []
-generals_list = []
+OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
 
 def main():
     mode = "explore"
-    main_army = (-1, -1)
-    general_r, general_c = -1, -1
-    rush_target = (-1, -1)
+    main_army, rush_target, enemy_general = None, None, None
     done_exploring = False
+
     for state in general.get_updates():
         our_flag = state['player_index']
         try:
             general_r, general_c = state['generals'][our_flag]
-            if main_army == (-1, -1):
+            if main_army is None:
                 main_army = (general_r, general_c)
         except KeyError:
             break
 
         rows, cols = state['rows'], state['cols']
+        utils = GeneralUtils(rows, cols)
 
-        turn = state['turn']
-        tiles = state['tile_grid']
-        armies = state['army_grid']
-        cities = state['cities']
-        swamps = state['swamps']
-        generals_list = state['generals']
+        turn, tiles, armies, cities, swamps, generals_list = state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals']
 
         if mode != "rush":
             if turn > 800:
@@ -56,24 +48,21 @@ def main():
         if mode == "explore":
             pre = []
             empty = []
-            for x in range(rows):
-                for y in range(cols):
-                    t = tiles[x][y]
-                    if t == our_flag:
-                        pre.append((x, y + 1, armies[x][y]))
-                        pre.append((x, y - 1, armies[x][y]))
-                        pre.append((x + 1, y, armies[x][y]))
-                        pre.append((x - 1, y, armies[x][y]))
+            for r in range(rows):
+                for c in range(cols):
+                    if tiles[r][c] == our_flag:
+                        for offset in OFFSETS:
+                            pre.append((r + offset[0], c + offset[1]))
 
             for pair in pre:
                 if pair[0] < 0 or pair[0] >= rows or pair[1] < 0 or pair[1] >= cols:
                     continue
                 if tiles[pair[0]][pair[1]] == -1:
-                    a, b, d = closest(rows, cols, pair[0], pair[1], our_flag, tiles, armies, cities)
-                    if a != -1 and b != -1 and d != -1:
+                    a, b, d = utils.closest(pair[0], pair[1], our_flag, tiles, armies, cities)
+                    if (a, b, d) != (-1, -1, -1):
                         # print(armies[a][b])
                         empty.append((pair[0], pair[1], a, b, d,
-                                      manhattan_dist(rows, cols, pair[0], pair[1], general_r, general_c, tiles, cities,
+                                      utils.manhattan_dist(pair[0], pair[1], general_r, general_c, tiles, cities,
                                                      our_flag)))
 
             moved = False
@@ -87,14 +76,13 @@ def main():
 
                 print(a, b, c, d)
                 moves = []
-                if a - 1 >= 0 and tiles[a - 1][b] >= -1:
-                    moves.append((a - 1, b, manhattan_dist(rows, cols, a - 1, b, c, d, tiles, cities, our_flag, attack=True)))
-                if a + 1 < rows and tiles[a + 1][b] >= -1:
-                    moves.append((a + 1, b, manhattan_dist(rows, cols, a + 1, b, c, d, tiles, cities, our_flag, attack=True)))
-                if b - 1 >= 0 and tiles[a][b - 1] >= -1:
-                    moves.append((a, b - 1, manhattan_dist(rows, cols, a, b - 1, c, d, tiles, cities, our_flag, attack=True)))
-                if b + 1 < cols and tiles[a][b + 1] >= -1:
-                    moves.append((a, b + 1, manhattan_dist(rows, cols, a, b + 1, c, d, tiles, cities, our_flag, attack=True)))
+
+                for offset in OFFSETS:
+                    if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
+                        moves.append(
+                            (a + offset[0], b + offset[1], utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
+                        )
+
                 moves = sorted(moves, key=lambda x: x[2])
                 if len(moves):
                     bm = moves[0]
@@ -103,7 +91,7 @@ def main():
                     break
             if not moved and turn % 2 == 0:
                 done_exploring = True
-        if mode == "consolidate":
+        elif mode == "consolidate":
             max_tiles = []
             max_army = 0
             for r in range(rows):
@@ -120,7 +108,7 @@ def main():
                     t = tiles[r][c]
                     if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
                         # d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) * 10 + 1)
-                        d = math.sqrt(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) + 1)
+                        d = math.sqrt(utils.manhattan_dist(r, c, general_r, general_c, tiles, cities, our_flag, attack=True) + 1)
                         if armies[r][c] * d > max_army:
                             max_army = armies[r][c] * d
                             max_tiles = [(r, c)]
@@ -137,22 +125,13 @@ def main():
 
             a, b = farthest_tile
             moves = []
-            if a - 1 >= 0:
-                if tiles[a - 1][b] in (-1, our_flag, 0 , 1):
+            for offset in OFFSETS:
+                if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
                     moves.append(
-                        (a - 1, b, manhattan_dist(rows, cols, a - 1, b, general_r, general_c, tiles, cities, our_flag, attack=True)))
-            if a + 1 < rows:
-                if tiles[a + 1][b] in (-1, our_flag, 0 , 1):
-                    moves.append(
-                        (a + 1, b, manhattan_dist(rows, cols, a + 1, b, general_r, general_c, tiles, cities, our_flag, attack=True)))
-            if b - 1 >= 0:
-                if tiles[a][b - 1] in (-1, our_flag, 0 , 1):
-                    moves.append(
-                        (a, b - 1, manhattan_dist(rows, cols, a, b - 1, general_r, general_c, tiles, cities, our_flag, attack=True)))
-            if b + 1 < cols:
-                if tiles[a][b + 1] in (-1, our_flag, 0 , 1):
-                    moves.append(
-                        (a, b + 1, manhattan_dist(rows, cols, a, b + 1, general_r, general_c, tiles, cities, our_flag, attack=True)))
+                        (a + offset[0], b + offset[1],
+                         utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
+                    )
+
             moves = sorted(moves, key=lambda x: x[2])
             if len(moves) and mode != "rush":
                 bm = moves[0]
@@ -164,66 +143,36 @@ def main():
 
         elif mode == "rush":
             if armies[main_army[0]][main_army[1]] < 100 and turn % 2 == 1:
+                print("consolidating because not enough troops")
                 mode = "consolidate"
                 main_army = (general_r, general_c)
-
-            pre = []
-            empty = []
-            r, c = main_army
 
             assert len(state["armies"]) == 2, "Assuming 1v1"
             enemy_flag = 1 - our_flag
 
             if generals_list[enemy_flag] != (-1, -1):
                 print(f"Enemy general found at: {generals_list[enemy_flag]}")
-                rush_target = generals_list[enemy_flag]
+                enemy_general = generals_list[enemy_flag]
 
-            if rush_target == (-1, -1) or rush_target == main_army:
-                far = farthest(rows, cols, our_flag, tiles, cities)
+            if rush_target is None or rush_target == main_army:
+                # far = farthest(rows, cols, our_flag, tiles, cities)
+                far = utils.farthest2(general_r, general_c, our_flag, tiles, armies, cities)
                 print(f"Updating rush target to {far}")
                 rush_target = far
-                # for x in range(rows):
-                #     for y in range(cols):
-                #         t = tiles[x][y]
-                #         if t == our_flag:
-                #             pre.append((x, y + 1))
-                #             pre.append((x, y - 1))
-                #             pre.append((x + 1, y))
-                #             pre.append((x - 1, y))
-                #
-                # for pair in pre:
-                #     if pair[0] < 0 or pair[0] >= rows or pair[1] < 0 or pair[1] >= cols:
-                #         continue
-                #     if tiles[pair[0]][pair[1]] == -1 or (tiles[pair[0]][pair[1]] >= 0 and tiles[pair[0]][pair[1]] != our_flag):
-                #         a, b, d = closest(rows, cols, pair[0], pair[1], tiles, armies, cities)
-                #         if a != -1 and b != -1 and d != -1 and pair != (rush_target):
-                #             empty.append((pair[0], pair[1], a, b, d,
-                #                           manhattan_dist(rows, cols, pair[0], pair[1], r, c, tiles, cities,
-                #                                          our_flag)))
-                #
-                # if len(empty):
-                #     empty = sorted(empty, key=lambda x: (x[4], x[5]))
-                #     best = empty[0]
-                #
-                # print(f"Updating rush target to {best[:2]}")
-                # rush_target = best[:2]
+
+            if enemy_general is not None:
+                rush_target = enemy_general
 
             a, b = main_army #best[2:4]
             c, d = rush_target
-            # print(a, b, c, d)
+            print(a, b, c, d)
             moves = []
-            if a - 1 >= 0:
-                if tiles[a - 1][b] in (-1, 0, 1):
-                    moves.append((a - 1, b, manhattan_dist(rows, cols, a - 1, b, c, d, tiles, cities, our_flag, attack=True)))
-            if a + 1 < rows:
-                if tiles[a + 1][b] in (-1, 0, 1):
-                    moves.append((a + 1, b, manhattan_dist(rows, cols, a + 1, b, c, d, tiles, cities, our_flag, attack=True)))
-            if b - 1 >= 0:
-                if tiles[a][b - 1] in (-1, 0, 1):
-                    moves.append((a, b - 1, manhattan_dist(rows, cols, a, b - 1, c, d, tiles, cities, our_flag, attack=True)))
-            if b + 1 < cols:
-                if tiles[a][b + 1] in (-1, 0, 1):
-                    moves.append((a, b + 1, manhattan_dist(rows, cols, a, b + 1, c, d, tiles, cities, our_flag, attack=True)))
+            for offset in OFFSETS:
+                if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
+                    moves.append(
+                        (a + offset[0], b + offset[1],
+                         utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
+                    )
 
             moves = sorted(moves, key=lambda x: x[2])
             if len(moves):
@@ -232,6 +181,7 @@ def main():
                 main_army = (bm[0], bm[1])
             else:
                 assert False
+
 
 if __name__ == "__main__":
     main()
