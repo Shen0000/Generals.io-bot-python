@@ -118,7 +118,7 @@ class GeneralUtils:
     def manhattan_dist(self, r, c, tr, tc, arr, cities, id, attack=False):
         if (not attack) and (arr[r][c] not in (-1, id) or (r, c) in cities):
             return 1000000
-        elif attack and (arr[r][c] not in (-1, 0, 1) or (r, c) in cities):
+        elif attack and (arr[r][c] in OBSTACLES or (r, c) in cities):
             return 1000000
         queue = [(r, c, 0)]
         vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
@@ -133,10 +133,25 @@ class GeneralUtils:
                 return dist
             else:
                 for offset in OFFSETS:
-                    if self.in_bounds(a + offset[0], b + offset[1]) and arr[a + offset[0]][b + offset[1]] >= -1:
+                    if self.in_bounds(a + offset[0], b + offset[1]) and arr[a + offset[0]][b + offset[1]] not in OBSTACLES:
                         queue.append((a+offset[0], b+offset[1], dist))
 
         return 1000000
+
+    def find_main(self, tiles, armies, id):
+        vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        max_r=-1
+        max_c=-1
+        max=0
+        for r in range(self.rows):
+            for c in range(self.cols):
+                if tiles[r][c]==id:
+                    if armies[r][c]>max:
+                        max_r=r
+                        max_c=c
+                        max=armies[r][c]
+        return max_r, max_c
+                
 
     def in_bounds(self, r=0, c=0):
         return 0 <= r < self.rows and 0 <= c < self.cols
