@@ -115,6 +115,25 @@ class GeneralUtils:
 
         return 1000000
 
+    def nearest_city(self, r, c, tr, tc, tiles, cities):
+        queue = [(r, c, 0)]
+        vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        while len(queue):
+            curr = queue.pop(0)
+            dist = curr[2] + 1
+            a , b = curr[:2]
+            if vis[a][b] or tiles[a][b] in OBSTACLES or ((a, b) in cities and (a, b) != (r, c)):
+                continue
+            vis[a][b] = True
+            if a == tr and b == tc:
+                return dist
+            else:
+                for offset in OFFSETS:
+                    if self.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] not in OBSTACLES and not vis[a + offset[0]][b + offset[1]]:
+                        queue.append((a+offset[0], b+offset[1], dist))
+
+        return 1000000
+
     def find_main(self, tiles, armies, id):
         vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
         max_r=-1

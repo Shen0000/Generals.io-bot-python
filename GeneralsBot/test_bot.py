@@ -28,7 +28,7 @@ def main():
         rows, cols = state['rows'], state['cols']
         utils = GeneralUtils(rows, cols)
 
-        turn, tiles, armies, cities, swamps, generals_list, alive= state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals'], state['alives']
+        turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals'], state['alives'], state['armies'], state['lands']
         for i in range(len(generals_list)):
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
                 enemy_general=generals_list[i]
@@ -45,7 +45,7 @@ def main():
                 MODE = "explore"
 
             if done_exploring and MODE == "explore":
-                MODE = "consolidate"
+                MODE = "cities"
             
             if done_cities and MODE == "cities":
                 MODE = "consolidate"
@@ -98,6 +98,20 @@ def main():
             if not moved and turn % 2 == 0:
                 done_exploring = True
 
+        elif MODE == "cities":
+            cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, our_flag))
+            done=True
+            for (r, c) in cities:
+                if tiles[r][c]<0:
+                    done=False
+                    strength = armies[r][c]
+                    # TODO : add check to see if we can take the city, then consolidate and take the city
+                    break
+            
+            if done:
+                done_cities=True
+                break
+
         elif MODE == "consolidate":
             max_tiles = []
             max_army = 0
@@ -108,7 +122,7 @@ def main():
                         for i in range(len(generals_list)):
                             if i != our_flag:
                                 enemy_flags.append(i)
-                        enemy_armies = [(state["armies"][flag], flag) for flag in enemy_flags]
+                        enemy_armies = [(army_size[flag], flag) for flag in enemy_flags]
                         enemy_armies.sort()
                         if armies[r][c] > 300 and enemy_armies[-1][0] * 0.5 - armies[r][c] < 0:
                             MODE = "scout"
