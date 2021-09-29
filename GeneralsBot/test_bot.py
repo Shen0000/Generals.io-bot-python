@@ -12,9 +12,9 @@ OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
 
 def main():
-    mode = "explore"
-    main_army, rush_target, enemy_general = None, None, None
-    done_exploring = False
+    MODE = "explore"
+    main_army, scout_target, enemy_general = None, None, None
+    done_exploring, done_cities = False, False
 
     for state in general.get_updates():
         our_flag = state['player_index']
@@ -28,24 +28,30 @@ def main():
         rows, cols = state['rows'], state['cols']
         utils = GeneralUtils(rows, cols)
 
-        turn, tiles, armies, cities, swamps, generals_list = state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals']
+        turn, tiles, armies, cities, swamps, generals_list, alive= state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals'], state['alives']
+        for i in range(len(generals_list)):
+            if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
+                enemy_general=generals_list[i]
 
-        if mode != "rush":
+        if MODE != "scout":
             if turn > 800:
-                mode = "consolidate"
+                MODE = "consolidate"
             # elif turn > 150:
             #     if turn % 100 < 25:
             #         mode = "consolidate"
             #     else:
             #         mode = "explore"
             else:
-                mode = "explore"
+                MODE = "explore"
 
-            if done_exploring and mode == "explore":
-                mode = "consolidate"
+            if done_exploring and MODE == "explore":
+                MODE = "consolidate"
+            
+            if done_cities and MODE == "cities":
+                MODE = "consolidate"
 
-        print(mode)
-        if mode == "explore":
+        print(MODE)
+        if MODE == "explore":
             pre = []
             empty = []
             for r in range(rows):
@@ -92,16 +98,20 @@ def main():
             if not moved and turn % 2 == 0:
                 done_exploring = True
 
-        elif mode == "consolidate":
+        elif MODE == "consolidate":
             max_tiles = []
             max_army = 0
             for r in range(rows):
                 for c in range(cols):
                     if r == general_r and c == general_c:  # ignore the army on capital
-                        assert len(state["armies"]) == 2, "Assuming 1v1"
-                        enemy_flag = 1 - our_flag
-                        if armies[r][c] > 300 and state["armies"][enemy_flag] * 0.5 - armies[r][c] < 0:
-                            mode = "rush"
+                        enemy_flags = []
+                        for i in range(len(generals_list)):
+                            if i != our_flag:
+                                enemy_flags.append(i)
+                        enemy_armies = [(state["armies"][flag], flag) for flag in enemy_flags]
+                        enemy_armies.sort()
+                        if armies[r][c] > 300 and enemy_armies[-1][0] * 0.5 - armies[r][c] < 0:
+                            MODE = "scout"
                             main_army = (general_r, general_c)
 
                         continue
@@ -126,40 +136,44 @@ def main():
                     )
 
             moves = sorted(moves, key=lambda x: x[2])
-            if len(moves) and mode != "rush":
+            if len(moves) and MODE != "scout":
                 bm = moves[0]
                 general.move(a, b, bm[0], bm[1])
             else:
-                print("out of moves, rushing")
-                mode = "rush"
+                print("out of moves, scouting")
+                MODE = "scout"
                 main_army = (general_r, general_c)
 
-        elif mode == "rush":
+        elif MODE == "scout":
             main_army=utils.find_main(tiles, armies, our_flag) #update main army to account for server lag
 
             if armies[main_army[0]][main_army[1]] < 100:
                 print("consolidating because not enough troops")
-                mode = "consolidate"
+                MODE = "consolidate"
                 main_army = (general_r, general_c)
 
-            assert len(state["armies"]) == 2, "Assuming 1v1"
-            enemy_flag = 1 - our_flag
+            enemy_flags = []
+            for i in range(len(generals_list)):
+                if i != our_flag:
+                    enemy_flags.append(i)
 
-            if generals_list[enemy_flag] != (-1, -1):
-                print(f"Enemy general found at: {generals_list[enemy_flag]}")
-                enemy_general = generals_list[enemy_flag]
 
-            if rush_target is None or rush_target == main_army:
+            for flag in enemy_flags:
+                if generals_list[flag] != (-1, -1) and alive[flag]:
+                    print(f"Enemy general found at: {generals_list[flag]}")
+                    enemy_general = generals_list[flag]
+
+            if scout_target is None or scout_target == main_army:
                 far = utils.farthest(our_flag, tiles, cities)
                 # far = utils.farthest2(general_r, general_c, our_flag, tiles, armies, cities)
-                print(f"Updating rush target to {far}")
-                rush_target = far
+                print(f"Updating scout target to {far}")
+                scout_target = far
 
             if enemy_general is not None:
-                rush_target = enemy_general
+                scout_target = enemy_general
 
             a, b = main_army #best[2:4]
-            c, d = rush_target
+            c, d = scout_target
             print(a, b, c, d)
             moves = []
             for offset in OFFSETS:
