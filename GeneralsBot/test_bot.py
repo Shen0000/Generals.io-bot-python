@@ -14,6 +14,8 @@ OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 def main():
     mode = "explore"
     main_army, rush_target, enemy_general = None, None, None
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"curr_tile": (-1, -1)}}
+
     done_exploring = False
 
     for state in general.get_updates():
@@ -22,6 +24,7 @@ def main():
             general_r, general_c = state['generals'][our_flag]
             if main_army is None:
                 main_army = (general_r, general_c)
+                mode_settings["consolidate"]["curr_tile"] = main_army
         except KeyError:
             break
 
@@ -73,7 +76,7 @@ def main():
                 if armies[a][b] <= 1 or tiles[c][d] != -1:  # TODO: figure out why this is needed, tiles[c][d] should be empty
                     continue
 
-                print(a, b, c, d)
+                # print(a, b, c, d)
                 moves = []
 
                 for offset in OFFSETS:
@@ -93,42 +96,46 @@ def main():
                 done_exploring = True
 
         elif mode == "consolidate":
-            max_tiles = []
-            max_army = 0
-            for r in range(rows):
-                for c in range(cols):
-                    if r == general_r and c == general_c:  # ignore the army on capital
-                        assert len(state["armies"]) == 2, "Assuming 1v1"
-                        enemy_flag = 1 - our_flag
-                        if armies[r][c] > 300 and state["armies"][enemy_flag] * 0.5 - armies[r][c] < 0:
-                            mode = "rush"
-                            main_army = (general_r, general_c)
+            if mode_settings["consolidate"]["curr_tile"] == main_army:
+                max_tiles = []
+                max_army = 0
+                for r in range(rows):
+                    for c in range(cols):
+                        if r == general_r and c == general_c:  # ignore the army on capital
+                            assert len(state["armies"]) == 2, "Assuming 1v1"
+                            enemy_flag = 1 - our_flag
+                            if armies[r][c] > 300 and state["armies"][enemy_flag] * 0.5 - armies[r][c] < 0:
+                                mode = "rush"
+                                main_army = (general_r, general_c)
 
-                        continue
+                            continue
 
-                    t = tiles[r][c]
-                    if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
-                        # d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) * 10 + 1)
-                        d = math.sqrt(utils.manhattan_dist(r, c, general_r, general_c, tiles, cities, our_flag, attack=True) + 1)
-                        if armies[r][c] * d > max_army:
-                            max_army = armies[r][c] * d
-                            max_tiles = [(r, c)]
+                        t = tiles[r][c]
+                        if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
+                            # d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) * 10 + 1)
+                            d = math.sqrt(utils.manhattan_dist(r, c, general_r, general_c, tiles, cities, our_flag, attack=True) + 1)
+                            if armies[r][c] * d > max_army:
+                                max_army = armies[r][c] * d
+                                max_tiles = [(r, c)]
 
-            farthest_tile = max_tiles[0]
+                # farthest_tile = max_tiles[0]
+                mode_settings["consolidate"]["curr_tile"] = max_tiles[0]
 
-            a, b = farthest_tile
+            a, b = mode_settings["consolidate"]["curr_tile"] #farthest_tile
             moves = []
             for offset in OFFSETS:
                 if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
                     moves.append(
                         (a + offset[0], b + offset[1],
-                         utils.manhattan_dist(a + offset[0], b + offset[1], general_r, general_c, tiles, cities, our_flag, attack=True))
+                         utils.manhattan_dist(a + offset[0], b + offset[1], general_r, general_c,
+                                              tiles, cities, our_flag, attack=True), armies[a + offset[0]][b + offset[1]])
                     )
 
-            moves = sorted(moves, key=lambda x: x[2])
+            moves = sorted(moves, key=lambda x: (x[2], x[3]))
             if len(moves) and mode != "rush":
                 bm = moves[0]
                 general.move(a, b, bm[0], bm[1])
+                mode_settings["consolidate"]["curr_tile"] = (bm[0], bm[1])
             else:
                 print("out of moves, rushing")
                 mode = "rush"

@@ -36,6 +36,33 @@ class GeneralUtils:
         return -1, -1, -1
 
 
+    def farthest3(self, r, c, our_flag, tiles, armies, cities):
+        vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        queue = [(r, c, 0)]
+        max_army = -1
+        max_tile = None  # TODO: change to (-1, -1)
+        while len(queue) > 0:
+            curr = queue.pop(0)
+            a, b = curr[:2]
+            dist = curr[2] + armies[r][c] - 1
+            if vis[a][b] or tiles[a][b] in (-2, -4) or (a, b) in cities:
+                continue
+
+            vis[a][b] = True
+            if tiles[a][b] != our_flag and dist > max_army:
+                max_tile = (a, b)
+
+            for offset in OFFSETS:
+                if self.in_bounds(a + offset[0], b + offset[1]) and not vis[a + offset[0]][b + offset[1]]:
+                    queue.append((a + offset[0], b + offset[1], dist))
+
+            if len(queue) == 1:
+                curr = queue.pop(0)
+                a, b = curr[:2]
+                return a, b
+
+        return max_tile
+
     def farthest2(self, r, c, our_flag, tiles, armies, cities):
         vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
         queue = [(r, c, 0)]
@@ -51,17 +78,9 @@ class GeneralUtils:
             if tiles[a][b] != our_flag:
                 prev_valid_tile = (a, b)
 
-            if a + 1 < self.rows and not vis[a + 1][b]:
-                queue.append((a + 1, b, dist))
-
-            if a - 1 >= 0 and not vis[a - 1][b]:
-                queue.append((a - 1, b, dist))
-
-            if b + 1 < self.cols and not vis[a][b + 1]:
-                queue.append((a, b + 1, dist))
-
-            if b - 1 >= 0 and not vis[a][b - 1]:
-                queue.append((a, b - 1, dist))
+            for offset in OFFSETS:
+                if self.in_bounds(a + offset[0], b + offset[1]) and not vis[a + offset[0]][b + offset[1]]:
+                    queue.append((a + offset[0], b + offset[1], dist))
 
             if len(queue) == 1:
                 curr = queue.pop(0)
