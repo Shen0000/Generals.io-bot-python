@@ -43,6 +43,13 @@ def main():
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
                 enemy_general=generals_list[i]
 
+        enemy_flags = []
+        for i in range(len(generals_list)):
+            if i != our_flag and alive[i]:
+                enemy_flags.append(i)
+
+        enemy_flags.sort(key=lambda x: armies[x])
+
         if mode != "scout":
             if turn > 800:
                 mode = "consolidate"
@@ -55,7 +62,13 @@ def main():
                 mode = "explore"
 
             if mode_settings["explore"]["complete"] and mode == "explore":
-                mode = "cities"
+                unoccupied=False
+                for (a, b) in cities:
+                    if tiles[a][b] < 0:
+                        mode = "cities"
+                        unoccupied=True
+                if not unoccupied:
+                    mode = "consolidate"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "consolidate"
 
@@ -126,7 +139,8 @@ def main():
                         break
 
                 if closest_city is None:
-                    mode = "consolidate"
+                    mode = "explore"
+                    mode_settings[mode]["complete"]=False
                     continue
 
                 while len(mode_settings["cities"]["queued_path"]) < 2:
@@ -145,7 +159,7 @@ def main():
             c, d = mode_settings["cities"]["queued_path"][0]
             general.move(a, b, c, d)
 
-            if armies[general_r][general_c] > 300 and state["armies"][1 - our_flag] * 0.5 - armies[general_r][general_c] < turn / 2:
+            if armies[general_r][general_c] > 300 and state["armies"][enemy_flags[0]] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
                 main_army = (general_r, general_c)
 
@@ -156,11 +170,6 @@ def main():
                 print("consolidating because not enough troops")
                 mode = "consolidate"
                 main_army = (general_r, general_c)
-
-            enemy_flags = []
-            for i in range(len(generals_list)):
-                if i != our_flag:
-                    enemy_flags.append(i)
 
             for flag in enemy_flags:
                 if generals_list[flag] != (-1, -1) and alive[flag]:
