@@ -99,13 +99,44 @@ def main():
                 done_exploring = True
 
         elif MODE == "cities":
-            cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, our_flag))
+            cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
             done=True
-            for (r, c) in cities:
-                if tiles[r][c]<0:
+            for (row, column) in cities:
+                if tiles[row][column]<0:
+                    print(row, column)
+                    print(tiles[row][column])
                     done=False
-                    strength = armies[r][c]
-                    # TODO : add check to see if we can take the city, then consolidate and take the city
+                    max_tiles = []
+                    max_army = 0
+                    for r in range(rows):
+                        for c in range(cols):
+                            t = tiles[r][c]
+                            if t == our_flag and armies[r][c] > 1:  # TODO: will break if all other armies are 1
+                                # d = math.log(manhattan_dist(rows, cols, r, c, general_r, general_c, tiles, cities, our_flag, attack=True) * 10 + 1)
+                                d = math.sqrt(utils.city_dist(r, c, row, column, tiles, cities) + 1)
+                                if armies[r][c] * d > max_army:
+                                    max_army = armies[r][c] * d
+                                    max_tiles = [(r, c)]
+
+                    farthest_tile = max_tiles[0]
+
+                    a, b = farthest_tile
+                    moves = []
+                    for offset in OFFSETS:
+                        if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
+                            moves.append(
+                                (a + offset[0], b + offset[1],
+                                utils.city_dist(a + offset[0], b + offset[1], row, column, tiles, cities))
+                            )
+
+                    moves = sorted(moves, key=lambda x: x[2])
+                    if len(moves) and MODE != "scout":
+                        bm = moves[0]
+                        general.move(a, b, bm[0], bm[1])
+                    else:
+                        print("out of moves, scouting")
+                        MODE = "scout"
+                        main_army = (general_r, general_c)
                     break
             
             if done:
