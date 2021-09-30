@@ -13,7 +13,7 @@ FOG = -3
 OBSTACLE = -4
 
 '''
-swamp locations are given at the beginning of the game as a single value. 
+swamp locations are given at the beginning of the game as a single value.
 The whole grid is represented as a line:
 0  1  2  3  4  5  6  7  8  9
 10 11 12 13 14 15 16 17 18 19 ...etc
