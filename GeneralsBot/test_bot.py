@@ -116,7 +116,7 @@ def main():
                 main_army = (general_r, general_c)
 
         elif mode == "cities":
-            if len(mode_settings["cities"]["queued_path"]) == 0 or tiles[mode_settings["cities"]["queued_path"][0][0]][mode_settings["cities"]["queued_path"][0][1]] != our_flag: #or mode_settings["consolidate"]["queued_path"][0] in cities:
+            if len(mode_settings["cities"]["queued_path"]) < 2 or tiles[mode_settings["cities"]["queued_path"][0][0]][mode_settings["cities"]["queued_path"][0][1]] != our_flag:
                 closest_city = None
                 cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
 
@@ -127,9 +127,17 @@ def main():
 
                 if closest_city is None:
                     mode = "consolidate"
-                    break
+                    continue
 
                 while len(mode_settings["cities"]["queued_path"]) < 2:
+                    unoccupied_cities = []
+                    for (r, c) in cities:
+                        if tiles[r][c] != our_flag and (r, c) != closest_city:  # TODO
+                            unoccupied_cities.append((r, c))
+
+                    state['cities'] = unoccupied_cities
+                    cities = unoccupied_cities
+
                     mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
                     print(mode_settings["cities"]["queued_path"])
 
