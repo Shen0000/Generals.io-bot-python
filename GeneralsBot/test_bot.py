@@ -16,13 +16,11 @@ def main():
     main_army, rush_target, enemy_general = None, None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}}
 
-    done_exploring = False
-
     for state in general.get_updates():
         our_flag = state['player_index']
         try:
             general_r, general_c = state['generals'][our_flag]
-            if main_army is None:
+            if main_army is None:  # Should only run on initial update
                 main_army = (general_r, general_c)
                 mode_settings["consolidate"]["curr_tile"] = main_army
         except KeyError:
@@ -32,6 +30,7 @@ def main():
         utils = GeneralUtils(rows, cols)
 
         turn, tiles, armies, cities, swamps, generals_list = state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals']
+        moves = []
 
         if mode != "rush":
             if turn > 800:
@@ -44,7 +43,7 @@ def main():
             else:
                 mode = "explore"
 
-            if done_exploring and mode == "explore":
+            if mode_settings["explore"]["complete"] and mode == "explore":
                 mode = "consolidate"
 
         print(mode)
@@ -64,26 +63,21 @@ def main():
                 a, b, d = utils.closest(r, c, our_flag, tiles, armies, cities)
                 if (a, b, d) != (-1, -1, -1):
                     empty.append((r, c, a, b, d,
-                                  utils.manhattan_dist(r, c, general_r, general_c, tiles, cities, our_flag))
+                                  utils.manhattan_dist(r, c, general_r, general_c, state))
                                  )
 
             moved = False
             empty = sorted(empty, key=lambda x: (x[4], x[5]))
             for i in range(len(empty)):
-                best = empty[i]
-                a, b = best[2:4]
-                c, d = best[:2]
-                if armies[a][b] <= 1 or tiles[c][d] != -1:  # TODO: figure out why this is needed, tiles[c][d] should be empty
+                c, d, a, b = empty[i][:4]
+                if armies[a][b] <= 1:
                     continue
 
-                # print(a, b, c, d)
-                moves = []
-
                 for offset in OFFSETS:
-                    if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
-                        moves.append(
-                            (a + offset[0], b + offset[1], utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
-                        )
+                    adj_r = a + offset[0]
+                    adj_c = b + offset[1]
+                    if utils.in_bounds(adj_r, adj_c) and tiles[adj_r][adj_c] >= -1:
+                        moves.append((adj_r, adj_c, utils.manhattan_dist(adj_r, adj_c, c, d, state, attack=True)))
 
                 moves = sorted(moves, key=lambda x: x[2])
                 if len(moves):
@@ -93,19 +87,15 @@ def main():
                     break
 
             if not moved and turn % 2 == 0:
-                done_exploring = True
+                mode_settings["explore"]["complete"] = True
 
         elif mode == "consolidate":
             if len(mode_settings["consolidate"]["queued_path"]) == 0 or tiles[mode_settings["consolidate"]["queued_path"][0][0]][mode_settings["consolidate"]["queued_path"][0][1]] != our_flag or mode_settings["consolidate"]["queued_path"][0] == (general_r, general_c):
                 while len(mode_settings["consolidate"]["queued_path"]) < 2:
-                #     if len(mode_settings["consolidate"]["queued_path"]) == 1:
-                #         assert mode_settings["consolidate"]["queued_path"][0] == (general_r, general_c)
-                    mode_settings["consolidate"]["queued_path"] = utils.farthest4(general_r, general_c, our_flag, tiles, armies, cities)
-                    print(f'changed to {mode_settings["consolidate"]["queued_path"]}')
+                    mode_settings["consolidate"]["queued_path"] = utils.farthest4(general_r, general_c, state)
 
             a, b = mode_settings["consolidate"]["queued_path"].pop(0)
             c, d = mode_settings["consolidate"]["queued_path"][0]
-            print(a, b, c, d)
             general.move(a, b, c, d)
 
             if armies[general_r][general_c] > 300 and state["armies"][1 - our_flag] * 0.5 - armies[general_r][general_c] < turn / 2:
@@ -113,7 +103,7 @@ def main():
                 main_army = (general_r, general_c)
 
         elif mode == "rush":
-            main_army=utils.find_main(tiles, armies, our_flag) #update main army to account for server lag
+            main_army = utils.find_main(tiles, armies, our_flag)  # update main army to account for server lag
 
             if armies[main_army[0]][main_army[1]] < 100:
                 print("consolidating because not enough troops")
@@ -136,24 +126,21 @@ def main():
             if enemy_general is not None:
                 rush_target = enemy_general
 
-            a, b = main_army #best[2:4]
+            a, b = main_army
             c, d = rush_target
-            print(a, b, c, d)
-            moves = []
+
             for offset in OFFSETS:
-                if utils.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] >= -1:
-                    moves.append(
-                        (a + offset[0], b + offset[1],
-                         utils.manhattan_dist(a + offset[0], b + offset[1], c, d, tiles, cities, our_flag, attack=True))
-                    )
+                adj_r = a + offset[0]
+                adj_c = b + offset[1]
+                if utils.in_bounds(adj_r, adj_c) and tiles[adj_r][adj_c] >= -1:
+                    moves.append((adj_r, adj_c, utils.manhattan_dist(adj_r, adj_c, c, d, state, attack=True)))
 
             moves = sorted(moves, key=lambda x: x[2])
-            if len(moves):
-                bm = moves[0]
-                general.move(a, b, bm[0], bm[1])
-                main_army = (bm[0], bm[1])
-            else:
-                assert False
+
+            assert len(moves)
+            bm = moves[0]
+            general.move(a, b, bm[0], bm[1])
+            main_army = (bm[0], bm[1])
 
 
 if __name__ == "__main__":
