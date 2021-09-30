@@ -106,12 +106,14 @@ class GeneralUtils:
             for col in range(self.cols):
                 if tiles[row][col] == our_flag:
                     queue.append((row, col))
-                elif tiles[row][col] in (-4, -2) or (row, col) in cities:
+
+                elif tiles[row][col] in OBSTACLES or (row, col) in cities:
                     vis[row][col] = True
 
         while True:
             a, b = queue.pop(0)
-            if vis[a][b] or tiles[a][b] == -2 or (a, b) in cities:
+
+            if vis[a][b] or tiles[a][b] in OBSTACLES or (a, b) in cities:
                 if len(queue) == 0:
                     if len(fringe) == 0:
                         return a, b
@@ -137,7 +139,8 @@ class GeneralUtils:
 
     def manhattan_dist(self, r, c, tr, tc, state, attack=False):
         tiles, cities, our_flag = state['tile_grid'], state['cities'], state["player_index"]
-        if ((not attack) and (tiles[r][c] not in (-1, our_flag) or (r, c) in cities)) or (attack and (tiles[r][c] in OBSTACLES or (r, c) in cities)):
+        if ((not attack) and (tiles[r][c] not in (-1, our_flag) or (r, c) in cities)) or (
+                attack and (tiles[r][c] in OBSTACLES or (r, c) in cities)):
             return 1e6
 
         queue = [(r, c, 0)]
@@ -161,6 +164,46 @@ class GeneralUtils:
 
         return 1e6
 
+    def city_dist(self, r, c, tr, tc, tiles, cities):
+        if tiles[r][c] in OBSTACLES:
+            return 1000000
+        queue = [(r, c, 0)]
+        vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        while len(queue):
+            curr = queue.pop(0)
+            dist = curr[2] + 1
+            a , b = curr[:2]
+            if a == tr and b == tc:
+                return dist
+            if vis[a][b] or tiles[a][b] in OBSTACLES or (a, b) in cities:
+                continue
+            else:
+                vis[a][b]=True
+                for offset in OFFSETS:
+                    if self.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] not in OBSTACLES and not vis[a + offset[0]][b + offset[1]]:
+                        queue.append((a+offset[0], b+offset[1], dist))
+
+        return 1000000
+
+    def nearest_city(self, r, c, tr, tc, tiles, cities):
+        queue = [(r, c, 0)]
+        vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
+        while len(queue):
+            curr = queue.pop(0)
+            dist = curr[2] + 1
+            a , b = curr[:2]
+            if vis[a][b] or tiles[a][b] in OBSTACLES or ((a, b) in cities and (a, b) != (r, c)):
+                continue
+            vis[a][b] = True
+            if a == tr and b == tc:
+                return dist
+            else:
+                for offset in OFFSETS:
+                    if self.in_bounds(a + offset[0], b + offset[1]) and tiles[a + offset[0]][b + offset[1]] not in OBSTACLES and not vis[a + offset[0]][b + offset[1]]:
+                        queue.append((a+offset[0], b+offset[1], dist))
+
+        return 1000000
+
     def find_main(self, tiles, armies, id):
         vis = [[False for _ in range(self.cols)] for _ in range(self.rows)]
         max_r=-1
@@ -174,7 +217,6 @@ class GeneralUtils:
                         max_c=c
                         max=armies[r][c]
         return max_r, max_c
-                
 
     def in_bounds(self, r=0, c=0):
         return 0 <= r < self.rows and 0 <= c < self.cols
