@@ -14,7 +14,7 @@ OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 def main():
     mode = "explore"
     main_army, enemy_general = None, None
-    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": []}, "scout": {"scout_target": None}}
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
 
     for state in general.get_updates():
         our_flag = state['player_index']
@@ -62,15 +62,12 @@ def main():
                 mode = "explore"
 
             if mode_settings["explore"]["complete"] and mode == "explore":
-                unoccupied=False
-                for (a, b) in cities:
-                    if tiles[a][b] < 0:
-                        mode = "cities"
-                        unoccupied=True
-                if not unoccupied:
+                if mode_settings["cities"]["complete"]:
                     mode = "consolidate"
+                else:
+                    mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
-                mode = "consolidate"
+                mode = "explore"
 
         print(mode)
         if mode == "explore":
@@ -115,6 +112,10 @@ def main():
             if not moved and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
+            for (a, b) in cities: # check so that we explore everything
+                if tiles[a][b] < 0:
+                    mode_settings["cities"]["complete"] = False
+
         elif mode == "consolidate":
             if len(mode_settings["consolidate"]["queued_path"]) == 0 or tiles[mode_settings["consolidate"]["queued_path"][0][0]][mode_settings["consolidate"]["queued_path"][0][1]] != our_flag or mode_settings["consolidate"]["queued_path"][0] == (general_r, general_c):
                 while len(mode_settings["consolidate"]["queued_path"]) < 2:
@@ -134,13 +135,14 @@ def main():
                 cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
 
                 for r, c in cities:
-                    if tiles[r][c] < 0:
+                    if tiles[r][c] == -1:
                         closest_city = (r, c)
                         break
 
                 if closest_city is None:
                     mode = "explore"
-                    mode_settings[mode]["complete"]=False
+                    mode_settings["cities"]["complete"] = True
+                    mode_settings["explore"]["complete"] = False
                     continue
 
                 while len(mode_settings["cities"]["queued_path"]) < 2:
