@@ -13,7 +13,7 @@ FOG = -3
 OBSTACLE = -4
 
 '''
-swamp locations are given at the beginning of the game as a single value. 
+swamp locations are given at the beginning of the game as a single value.
 The whole grid is represented as a line:
 0  1  2  3  4  5  6  7  8  9
 10 11 12 13 14 15 16 17 18 19 ...etc
@@ -21,6 +21,7 @@ The whole grid is represented as a line:
 
 _ENDPOINT = "wss://botws.generals.io/socket.io/?EIO=3&transport=websocket"
 _REPLAY_URL = "http://bot.generals.io/replays/"
+_REPLAY_ID = ""
 
 _RESULTS = {
     "game_update": "",
@@ -116,9 +117,11 @@ class Generals(object):
             elif msg[0] == "game_start":
                 logging.info("Game info: {}".format(msg[1]))
                 self._start_data = msg[1]
+                _REPLAY_ID = msg[1]['replay_id']
                 if STORE_REPLAY: #store the replay link in a separate file
+                    print("Storing replay...")
                     with open("replays.txt", "a") as results:
-                        results.write(_REPLAY_URL + msg[1]['replay_id'] + '\n')
+                        results.write(_REPLAY_URL + _REPLAY_ID + '\n')
             elif msg[0] == "game_update":
                 yield self._make_update(msg[1])
             elif msg[0] in ["game_won", "game_lost"]:

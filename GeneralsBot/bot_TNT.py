@@ -212,7 +212,6 @@ for state in general.get_updates():
     generals_list = state['generals']
     if cities != []:
         print(state)
-        break
     # move_to units from general to arbitrary square
     # for dy, dx in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
     #     if (0 <= general_y+dy < state['rows'] and 0 <= general_x+dx < state['cols']
