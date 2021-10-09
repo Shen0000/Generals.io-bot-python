@@ -14,7 +14,7 @@ OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 def main():
     mode = "explore"
     main_army, enemy_general = None, None
-    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": []}, "scout": {"scout_target": None}}
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
 
     for state in general.get_updates():
         our_flag = state['player_index']
@@ -43,6 +43,13 @@ def main():
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
                 enemy_general=generals_list[i]
 
+        enemy_flags = []
+        for i in range(len(generals_list)):
+            if i != our_flag and alive[i]:
+                enemy_flags.append(i)
+
+        enemy_flags.sort(key=lambda x: armies[x])
+
         if mode != "scout":
             if turn > 800:
                 mode = "consolidate"
@@ -55,9 +62,12 @@ def main():
                 mode = "explore"
 
             if mode_settings["explore"]["complete"] and mode == "explore":
-                mode = "cities"
+                if mode_settings["cities"]["complete"]:
+                    mode = "consolidate"
+                else:
+                    mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
-                mode = "consolidate"
+                mode = "explore"
 
         print(mode)
         if mode == "explore":
@@ -102,6 +112,10 @@ def main():
             if not moved and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
+            for (a, b) in cities: # check so that we explore everything
+                if tiles[a][b] < 0:
+                    mode_settings["cities"]["complete"] = False
+
         elif mode == "consolidate":
             if len(mode_settings["consolidate"]["queued_path"]) == 0 or tiles[mode_settings["consolidate"]["queued_path"][0][0]][mode_settings["consolidate"]["queued_path"][0][1]] != our_flag or mode_settings["consolidate"]["queued_path"][0] == (general_r, general_c):
                 while len(mode_settings["consolidate"]["queued_path"]) < 2:
@@ -121,12 +135,14 @@ def main():
                 cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
 
                 for r, c in cities:
-                    if tiles[r][c] < 0:
+                    if tiles[r][c] == -1:
                         closest_city = (r, c)
                         break
 
                 if closest_city is None:
-                    mode = "consolidate"
+                    mode = "explore"
+                    mode_settings["cities"]["complete"] = True
+                    mode_settings["explore"]["complete"] = False
                     continue
 
                 while len(mode_settings["cities"]["queued_path"]) < 2:
@@ -145,7 +161,7 @@ def main():
             c, d = mode_settings["cities"]["queued_path"][0]
             general.move(a, b, c, d)
 
-            if armies[general_r][general_c] > 300 and state["armies"][1 - our_flag] * 0.5 - armies[general_r][general_c] < turn / 2:
+            if armies[general_r][general_c] > 300 and state["armies"][enemy_flags[0]] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
                 main_army = (general_r, general_c)
 
@@ -156,11 +172,6 @@ def main():
                 print("consolidating because not enough troops")
                 mode = "consolidate"
                 main_army = (general_r, general_c)
-
-            enemy_flags = []
-            for i in range(len(generals_list)):
-                if i != our_flag:
-                    enemy_flags.append(i)
 
             for flag in enemy_flags:
                 if generals_list[flag] != (-1, -1) and alive[flag]:

@@ -33,7 +33,7 @@ class GeneralUtils:
         prev_tile = [[(-1, -1) for _ in range(self.cols)] for _ in range(self.rows)]
         fringe_lvls = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
 
-        dists[r][c] = armies[r][c]
+        dists[r][c] = max(1, armies[r][c])
         fringe_lvls[r][c] = 0
         fringe_level = 1
 
