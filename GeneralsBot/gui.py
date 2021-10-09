@@ -1,6 +1,8 @@
 import wx
+from wx.core import TILE
 from make_map import create_map
 
+TILE_SIZE = 30
 
 tiles, cities = create_map(data=[1, 1, 1, 0, 1, 2])
 rows = len(tiles)
@@ -10,7 +12,7 @@ assert rows == len(armies) and cols == len(armies[0])
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(500, 400))
+        wx.Frame.__init__(self, parent, title=title, size=((TILE_SIZE+2) * cols, (TILE_SIZE+2) * rows))
         self.panel = wx.Panel(self)
         self.panel.SetBackgroundColour("#E6E6E6")
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
@@ -38,7 +40,7 @@ class MyFrame(wx.Frame):
                     dc.SetBrush(wx.Brush('#4a62d1'))
                 else:
                     dc.SetBrush(wx.Brush('#00c56c'))
-                dc.DrawRectangle(c * 30, r * 30, 30, 30)
+                dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
         self.Show(True)
 
