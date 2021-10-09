@@ -7,6 +7,7 @@ def flood(grid, flag):
 
 def create_map(data):
     length, width, city_density, swamp_density, mountain_density, num_players = data
+    assert num_players > 1 
     grid = []
     cities = []
     rows, cols = 0, 0
@@ -14,13 +15,13 @@ def create_map(data):
     cols = MIN + int(MIN*width) + random.randint(-2, 2)
     rows = min( max(rows, MIN), MAX) # make sure everything is in bounds
     cols = min( max(cols, MIN), MAX)
-    print(rows, cols)
+    #print(rows, cols)
     for i in range(rows):
         grid.append([-1 for j in range(cols)])
     num_mountains = int(100 * mountain_density) + int((length + width)/2 * 40) + random.randint(-5, 5)
     num_cities = int(10 * city_density) * num_players + random.randint(0, num_players)
-    print(num_mountains)
-    print(num_cities)
+    #print(num_mountains)
+    #print(num_cities)
     filled = set()
     cnt = 0
     while cnt < num_mountains:
@@ -36,16 +37,17 @@ def create_map(data):
             filled.add(rand)
             cities.append((rand // cols, rand % cols))
             cnt+=1
+    '''
     tot = 0
     for row in grid:
         print(row)
         for n in row:
             if n==-2:
                 tot+=1
-    #print(tot)
+    print(tot)
     print(cities)
-    
-    return grid
+    '''
+    return grid, cities
 
 def valid(grid):
     return True
@@ -58,9 +60,9 @@ if __name__ == "__main__":
     mountain_density = 0.5
     num_players = 2
     data = [length, width, city_density, swamp_density, mountain_density, num_players]
-    grid = create_map(data)
+    grid, cities = create_map(data)
     while not valid(grid):
-        grid = create_map(data)
+        grid, cities = create_map(data)
 
 '''
 Testing:
