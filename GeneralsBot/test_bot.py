@@ -9,15 +9,17 @@ import wx
 
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+TILE_SIZE = 30
 
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(500, 400))
+        wx.Frame.__init__(self, parent, title=title, size=(1000, 1000))
         self.panel = wx.Panel(self)
         self.panel.SetBackgroundColour("#E6E6E6")
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.tiles = None
+        self.cities = None
 
         self.Centre()
         self.Show()
@@ -26,23 +28,24 @@ class MyFrame(wx.Frame):
         if self.tiles is not None:
             dc = wx.PaintDC(self.panel)
             dc.SetPen(wx.Pen('#000000'))
-            rows = len(self.tiles)
-            cols = len(self.tiles[0])
-            for r in range(rows):
-                for c in range(cols):
+            for r in range(len(self.tiles)):
+                for c in range(len(self.tiles[0])):
                     if self.tiles[r][c] in (-3, -4):
                         dc.SetBrush(wx.Brush('#393939'))
                     elif self.tiles[r][c] == -2:
                         dc.SetBrush(wx.Brush('#bbbbbb'))
                     elif self.tiles[r][c] == -1:
-                        dc.SetBrush(wx.Brush('#dcdcdc'))
+                        if (r, c) in self.cities:
+                            dc.SetBrush(wx.Brush('#c0ff00'))
+                        else:
+                            dc.SetBrush(wx.Brush('#dcdcdc'))
                     elif self.tiles[r][c] == 0:
                         dc.SetBrush(wx.Brush('#ea3323'))
                     elif self.tiles[r][c] == 1:
                         dc.SetBrush(wx.Brush('#4a62d1'))
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
-                    dc.DrawRectangle(c * 20, r * 20, 20, 20)
+                    dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
         self.Show(True)
 
@@ -61,8 +64,8 @@ def main(frame):
                 mode_settings["consolidate"]["curr_tile"] = main_army
         except KeyError:
             break
-
-        rows, cols = state['rows'], state['cols']
+        rows = state['rows']
+        cols = state['cols']
         utils = GeneralUtils(rows, cols)
 
         turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
@@ -70,6 +73,7 @@ def main(frame):
             state['generals'], state['alives'], state['armies'], state['lands']
 
         frame.tiles = tiles
+        frame.cities = cities
         wx.CallAfter(frame.Refresh)
 
         moves = []
