@@ -1,5 +1,4 @@
 import wx
-from wx.core import TILE
 from make_map import create_map
 
 TILE_SIZE = 30
@@ -41,6 +40,9 @@ class MyFrame(wx.Frame):
                 else:
                     dc.SetBrush(wx.Brush('#00c56c'))
                 dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                if tiles[r][c] >=-1:
+                    dc.DrawText(str(armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
+                    pass
 
         self.Show(True)
 

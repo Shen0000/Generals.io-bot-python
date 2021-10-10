@@ -20,6 +20,7 @@ class MyFrame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.tiles = None
         self.cities = None
+        self.armies = None
 
         self.Centre()
         self.Show()
@@ -46,6 +47,8 @@ class MyFrame(wx.Frame):
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    if self.tiles[r][c] >=-1:
+                        dc.DrawText(str(self.armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
 
         self.Show(True)
 
@@ -74,6 +77,7 @@ def main(frame):
 
         frame.tiles = tiles
         frame.cities = cities
+        frame.armies = armies
         wx.CallAfter(frame.Refresh)
 
         moves = []
