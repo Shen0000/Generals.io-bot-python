@@ -14,41 +14,58 @@ TILE_SIZE = 30
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(1000, 1000))
+        wx.Frame.__init__(self, parent, title=title, size=(800, 800))
         self.panel = wx.Panel(self)
         self.panel.SetBackgroundColour("#E6E6E6")
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
-        self.tiles = None
-        self.cities = None
-        self.armies = None
+        self.state = None
 
         self.Centre()
         self.Show()
 
     def repaint(self, event):
-        if self.tiles is not None:
+        if self.state is not None:
+            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
+                self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
+                self.state['cities'], self.state['swamps'], self.state['generals'], \
+                self.state['alives'], self.state['armies'], self.state['lands']
+
             dc = wx.PaintDC(self.panel)
-            dc.SetPen(wx.Pen('#000000'))
-            for r in range(len(self.tiles)):
-                for c in range(len(self.tiles[0])):
-                    if self.tiles[r][c] in (-3, -4):
+            dc.SetPen(wx.Pen('#000000', width=1))
+            for r in range(len(tiles)):
+                for c in range(len(tiles[0])):
+                    if tiles[r][c] in (-3, -4):
                         dc.SetBrush(wx.Brush('#393939'))
-                    elif self.tiles[r][c] == -2:
+                    elif tiles[r][c] == -2:
                         dc.SetBrush(wx.Brush('#bbbbbb'))
-                    elif self.tiles[r][c] == -1:
-                        if (r, c) in self.cities:
-                            dc.SetBrush(wx.Brush('#c0ff00'))
+                        dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
+                        for mountain in mountains:
+                            dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
+                                        mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
+                        dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                    elif tiles[r][c] == -1:
+                        if (r, c) in cities:
+                            dc.SetBrush(wx.Brush('#bbbbbb'))
                         else:
                             dc.SetBrush(wx.Brush('#dcdcdc'))
-                    elif self.tiles[r][c] == 0:
+                    elif tiles[r][c] == 0:
                         dc.SetBrush(wx.Brush('#ea3323'))
-                    elif self.tiles[r][c] == 1:
+                    elif tiles[r][c] == 1:
                         dc.SetBrush(wx.Brush('#4a62d1'))
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                    if self.tiles[r][c] >=-1:
-                        dc.DrawText(str(self.armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
+
+                    if (r, c) in generals_list:
+                        dc.SetPen(wx.Pen('#000000', width=3))
+                        dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
+                        dc.SetPen(wx.Pen('#000000', width=1))
+
+                    if tiles[r][c] >= 0 or (r, c) in cities:
+                        dc.SetTextForeground((255, 255, 255))
+                        dc.DrawText(str(armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
 
         self.Show(True)
 
@@ -75,9 +92,7 @@ def main(frame):
             state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], \
             state['generals'], state['alives'], state['armies'], state['lands']
 
-        frame.tiles = tiles
-        frame.cities = cities
-        frame.armies = armies
+        frame.state = state
         wx.CallAfter(frame.Refresh)
 
         moves = []
@@ -114,7 +129,7 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
 
-        print(mode)
+        # print(mode)
         if mode == "explore":
             pre = []
             empty = []
@@ -200,7 +215,6 @@ def main(frame):
                     cities = unoccupied_cities
 
                     mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
-                    print(mode_settings["cities"]["queued_path"])
 
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
