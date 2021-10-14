@@ -25,11 +25,11 @@ class MyFrame(wx.Frame):
 
     def repaint(self, event):
         if self.state is not None:
-            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities = \
+            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
                 self.state['alives'], self.state['armies'], self.state['lands'], \
-                self.state['all_cities']
+                self.state['all_cities'], self.state['all_generals']
 
             dc = wx.PaintDC(self.panel)
             dc.SetPen(wx.Pen('#000000', width=1))
@@ -58,7 +58,7 @@ class MyFrame(wx.Frame):
                         dc.SetBrush(wx.Brush('#00c56c'))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
-                    if (r, c) in generals_list:
+                    if (r, c) in all_generals:
                         dc.SetPen(wx.Pen('#000000', width=3))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                         dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
@@ -92,6 +92,7 @@ def main(frame):
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
     all_cities = set()
+    all_generals = set()
     for state in general.get_updates():
         our_flag = state['player_index']
         try:
@@ -125,6 +126,9 @@ def main(frame):
         for i in range(len(generals_list)):
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
                 enemy_general = generals_list[i]
+                all_generals.add(generals_list[i])
+        all_generals.add(generals_list[our_flag])
+        state['all_generals'] = all_generals
 
         enemy_flags = []
         for i in range(len(generals_list)):
