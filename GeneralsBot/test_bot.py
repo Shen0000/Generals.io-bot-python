@@ -83,7 +83,7 @@ class MyFrame(wx.Frame):
 
                         tw, th = dc.GetTextExtent(armies[r][c])
                         dc.DrawText(armies[r][c], TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
-
+            dc.DrawText()
         self.Show(True)
 
 
@@ -254,7 +254,7 @@ def main(frame):
                 main_army = (general_r, general_c)
 
             for flag in enemy_flags:
-                if generals_list[flag] != (-1, -1) and alive[flag]:
+                if generals_list[flag] in all_generals and alive[flag]:
                     print(f"Enemy general found at: {generals_list[flag]}")
                     enemy_general = generals_list[flag]
 
