@@ -83,7 +83,7 @@ class MyFrame(wx.Frame):
 
                         tw, th = dc.GetTextExtent(armies[r][c])
                         dc.DrawText(armies[r][c], TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
-            dc.DrawText()
+            
         self.Show(True)
 
 
