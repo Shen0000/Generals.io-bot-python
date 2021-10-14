@@ -25,10 +25,11 @@ class MyFrame(wx.Frame):
 
     def repaint(self, event):
         if self.state is not None:
-            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
+            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
-                self.state['alives'], self.state['armies'], self.state['lands']
+                self.state['alives'], self.state['armies'], self.state['lands'], \
+                self.state['all_cities']
 
             dc = wx.PaintDC(self.panel)
             dc.SetPen(wx.Pen('#000000', width=1))
@@ -62,16 +63,26 @@ class MyFrame(wx.Frame):
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                         dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
                         dc.SetPen(wx.Pen('#000000', width=1))
+                    if (r, c) in all_cities:
+                        dc.SetPen(wx.Pen('#000000', width=2))
+                        dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                        points = [
+                        (c * TILE_SIZE + int(TILE_SIZE/6), r * TILE_SIZE + int(TILE_SIZE/3)),
+                        (c * TILE_SIZE + int(TILE_SIZE*5/6), r * TILE_SIZE + int(TILE_SIZE/3)),
+                        (c * TILE_SIZE + int(TILE_SIZE/2), r * TILE_SIZE + int(TILE_SIZE/8))
+                        ]
+                        dc.DrawPolygon(points)
+                        dc.DrawRectangle(c * TILE_SIZE + int(TILE_SIZE*7/24), r * TILE_SIZE + int(TILE_SIZE/3), int(TILE_SIZE/2), int(TILE_SIZE/2))
+                        dc.SetPen(wx.Pen('#000000', width=1))
 
-                    if tiles[r][c] >= 0 or (r, c) in cities:
+                    if tiles[r][c] >= 0 or ((r, c) in all_cities and tiles[r][c] >= -1):
                         dc.SetTextForeground((255, 255, 255))
                         armies[r][c] = str(armies[r][c])
-                        temp = str(armies[r][c])
                         if len(armies[r][c]) > 3:
-                            temp = f"{armies[r][c][:3]}..."
+                            armies[r][c] = f"{armies[r][c][:3]}..."
 
-                        tw, th = dc.GetTextExtent(temp)
-                        dc.DrawText(temp, TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
+                        tw, th = dc.GetTextExtent(armies[r][c])
+                        dc.DrawText(armies[r][c], TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
         self.Show(True)
 
@@ -80,7 +91,7 @@ def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
-
+    all_cities = set()
     for state in general.get_updates():
         our_flag = state['player_index']
         try:
@@ -104,9 +115,10 @@ def main(frame):
         moves = []
         unoccupied_cities = []
         for (r, c) in cities:
+            all_cities.add((r, c))
             if tiles[r][c] != our_flag:
                 unoccupied_cities.append((r, c))
-
+        state['all_cities'] = all_cities
         state['cities'] = unoccupied_cities
         cities = unoccupied_cities
 
