@@ -43,6 +43,17 @@ class MyFrame(wx.Frame):
                 if tiles[r][c] >=-1:
                     dc.DrawText(str(armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
                     pass
+                if (r, c) in cities:
+                    dc.SetPen(wx.Pen('#000000', width=2))
+                    dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                    points = [
+                    (c * TILE_SIZE + int(TILE_SIZE/6), r * TILE_SIZE + int(TILE_SIZE/3)),
+                    (c * TILE_SIZE + int(TILE_SIZE*5/6), r * TILE_SIZE + int(TILE_SIZE/3)),
+                    (c * TILE_SIZE + int(TILE_SIZE/2), r * TILE_SIZE + int(TILE_SIZE/8))
+                    ]
+                    dc.DrawPolygon(points)
+                    dc.DrawRectangle(c * TILE_SIZE + int(TILE_SIZE*7/24), r * TILE_SIZE + int(TILE_SIZE/3), int(TILE_SIZE/2), int(TILE_SIZE/2))
+                    dc.SetPen(wx.Pen('#000000', width=1))
 
         self.Show(True)
 
