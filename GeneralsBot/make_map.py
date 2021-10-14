@@ -1,9 +1,34 @@
 import random
 
-MIN, MAX = 15, 30
+MIN, MAX = 15, 25
 
 def flood(grid, flag):
-    pass
+    print("flood filling...")
+    components = []
+    vis = [[False for _ in range(len(grid[0]))] for __ in range(len(grid))]
+    for r in range(len(grid)):
+        for c in range(len(grid[0])):
+            size=0
+            if grid[r][c] == flag and not vis[r][c]:
+                queue = []
+                queue.append((r, c))
+                while (len(queue)):
+                    curr = queue.pop(0)
+                    a, b = curr
+                    if a<0 or a>=len(grid) or b<0 or b>=len(grid[0]):
+                        continue
+                    if vis[a][b] or grid[a][b] != flag:
+                        continue
+                    vis[a][b] = True
+                    size+=1
+                    queue.append((a+1, b))
+                    queue.append((a-1, b))
+                    queue.append((a, b+1))
+                    queue.append((a, b-1))
+                components.append(size)
+    return components
+
+                    
 
 def create_map(data):
     length, width, city_density, swamp_density, mountain_density, num_players = data
@@ -47,22 +72,33 @@ def create_map(data):
     print(tot)
     print(cities)
     '''
-    return grid, cities
+    if valid(grid):
+        return grid, cities
+    else:
+        create_map(data)
 
 def valid(grid):
-    return True
+    print("checking validation...")
+    components = flood(grid, -1)
+    components.sort(reverse=True)
+    empty_tiles = 0
+    for component in components:
+        empty_tiles += component
+    largest = components[0]
+    frac = largest/empty_tiles
+    if frac<.90:
+        print("remaking map")
+    return frac>=.90
 
 if __name__ == "__main__":
-    length = 0.75
-    width = 0.75
+    length = 0.50
+    width = 0.50
     city_density = 1
     swamp_density = 0
-    mountain_density = 0.5
+    mountain_density = 1
     num_players = 2
     data = [length, width, city_density, swamp_density, mountain_density, num_players]
     grid, cities = create_map(data)
-    while not valid(grid):
-        grid, cities = create_map(data)
 
 '''
 Testing:
