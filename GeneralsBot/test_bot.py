@@ -19,11 +19,14 @@ class MyFrame(wx.Frame):
         self.panel.SetBackgroundColour("#E6E6E6")
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.state = None
+        self.info = {"mode": "Starting", "source": (-1, -1)}
 
         self.Centre()
         self.Show()
 
     def repaint(self, event):
+        dc = wx.PaintDC(self.panel)
+        dc.DrawText(f"Mode: {self.info['mode']}", 600, 20)
         if self.state is not None:
             turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
@@ -31,7 +34,10 @@ class MyFrame(wx.Frame):
                 self.state['alives'], self.state['armies'], self.state['lands'], \
                 self.state['all_cities']
 
-            dc = wx.PaintDC(self.panel)
+            for i, username in enumerate(self.state["usernames"]):
+                dc.DrawText(f"{username}'s Army: {army_size[i]}", 600, 40 + i * 20)
+                dc.DrawText(f"{username}'s Land: {land_size[i]}", 800, 40 + i * 20)
+
             dc.SetPen(wx.Pen('#000000', width=1))
             for r in range(len(tiles)):
                 for c in range(len(tiles[0])):
@@ -85,6 +91,12 @@ class MyFrame(wx.Frame):
                         tw, th = dc.GetTextExtent(temp)
                         dc.DrawText(temp, TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
+                if self.info["source"] != (-1, -1):
+                    dc.SetPen(wx.Pen('#ffffff', width=3))
+                    dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                    dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                    dc.SetPen(wx.Pen('#000000', width=1))
+
         self.Show(True)
 
 
@@ -110,9 +122,6 @@ def main(frame):
             state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], \
             state['generals'], state['alives'], state['armies'], state['lands']
 
-        frame.state = state
-        wx.CallAfter(frame.Refresh)
-
         moves = []
         unoccupied_cities = []
         for (r, c) in cities:
@@ -134,12 +143,7 @@ def main(frame):
 
         enemy_flags.sort(key=lambda x: armies[x])
 
-        if mode != "scout":
-            if turn > 800:
-                mode = "consolidate"
-            else:
-                mode = "explore"
-
+        if mode not in ("scout", "cities"):
             if mode_settings["explore"]["complete"] and mode == "explore":
                 if mode_settings["cities"]["complete"]:
                     mode = "consolidate"
@@ -148,7 +152,6 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
 
-        # print(mode)
         if mode == "explore":
             pre = []
             empty = []
@@ -191,8 +194,8 @@ def main(frame):
             if not moved and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
-            for (a, b) in cities: # check so that we explore everything
-                if tiles[a][b] < 0:
+            for (r, c) in cities: # check so that we explore everything
+                if tiles[r][c] < 0:
                     mode_settings["cities"]["complete"] = False
 
         elif mode == "consolidate":
@@ -276,6 +279,12 @@ def main(frame):
             bm = moves[0]
             general.move(a, b, bm[0], bm[1])
             main_army = (bm[0], bm[1])
+
+        frame.state = state
+        frame.info["mode"] = mode
+        frame.info["source"] = (a, b)
+        wx.CallAfter(frame.Refresh)
+
     wx.CallAfter(frame.Destroy)
 
 
