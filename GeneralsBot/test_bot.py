@@ -28,11 +28,11 @@ class MyFrame(wx.Frame):
         dc = wx.PaintDC(self.panel)
         dc.DrawText(f"Mode: {self.info['mode']}", 600, 20)
         if self.state is not None:
-            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities = \
+            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
                 self.state['alives'], self.state['armies'], self.state['lands'], \
-                self.state['all_cities']
+                self.state['all_cities'], self.state['all_generals']
 
             for i, username in enumerate(self.state["usernames"]):
                 dc.DrawText(f"{username}'s Army: {army_size[i]}", 600, 40 + i * 20)
@@ -64,7 +64,7 @@ class MyFrame(wx.Frame):
                         dc.SetBrush(wx.Brush('#00c56c'))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
-                    if (r, c) in generals_list:
+                    if (r, c) in all_generals:
                         dc.SetPen(wx.Pen('#000000', width=3))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                         dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
@@ -83,13 +83,13 @@ class MyFrame(wx.Frame):
 
                     if tiles[r][c] >= 0 or ((r, c) in all_cities and tiles[r][c] >= -1):
                         dc.SetTextForeground((255, 255, 255))
-                        armies[r][c] = str(armies[r][c])
                         temp = str(armies[r][c])
-                        if len(armies[r][c]) > 3:
-                            temp = f"{armies[r][c][:3]}..."
+                        if len(temp) > 3:
+                            temp = f"{temp[:3]}..."
 
                         tw, th = dc.GetTextExtent(temp)
-                        dc.DrawText(temp, TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
+                        dc.DrawText(temp, TILE_SIZE * c + (TILE_SIZE - tw) // 2,
+                                    TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
                 if self.info["source"] != (-1, -1):
                     dc.SetPen(wx.Pen('#ffffff', width=3))
@@ -104,7 +104,8 @@ def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
-    all_cities = set()
+    all_cities, all_generals = set(), set()
+
     for state in general.get_updates():
         our_flag = state['player_index']
         try:
@@ -135,6 +136,9 @@ def main(frame):
         for i in range(len(generals_list)):
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
                 enemy_general = generals_list[i]
+                all_generals.add(generals_list[i])
+        all_generals.add(generals_list[our_flag])
+        state['all_generals'] = all_generals
 
         enemy_flags = []
         for i in range(len(generals_list)):
@@ -254,7 +258,7 @@ def main(frame):
                 main_army = (general_r, general_c)
 
             for flag in enemy_flags:
-                if generals_list[flag] != (-1, -1) and alive[flag]:
+                if generals_list[flag] in all_generals and alive[flag]:
                     print(f"Enemy general found at: {generals_list[flag]}")
                     enemy_general = generals_list[flag]
 
