@@ -1,17 +1,81 @@
 import logging
 import math
+import threading
 
 from flood_fill import GeneralUtils
 from init_game import general
+import wx
 
 
 logging.basicConfig(level=logging.DEBUG)
-
-
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+TILE_SIZE = 30
 
 
-def main():
+class MyFrame(wx.Frame):
+    def __init__(self, parent, title):
+        wx.Frame.__init__(self, parent, title=title, size=(800, 800))
+        self.panel = wx.Panel(self)
+        self.panel.SetBackgroundColour("#E6E6E6")
+        self.panel.Bind(wx.EVT_PAINT, self.repaint)
+        self.state = None
+
+        self.Centre()
+        self.Show()
+
+    def repaint(self, event):
+        if self.state is not None:
+            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
+                self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
+                self.state['cities'], self.state['swamps'], self.state['generals'], \
+                self.state['alives'], self.state['armies'], self.state['lands']
+
+            dc = wx.PaintDC(self.panel)
+            dc.SetPen(wx.Pen('#000000', width=1))
+            for r in range(len(tiles)):
+                for c in range(len(tiles[0])):
+                    if tiles[r][c] in (-3, -4):
+                        dc.SetBrush(wx.Brush('#393939'))
+                    elif tiles[r][c] == -2:
+                        dc.SetBrush(wx.Brush('#bbbbbb'))
+                        dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+                        mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
+                        for mountain in mountains:
+                            dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
+                                        mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
+                        dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                    elif tiles[r][c] == -1:
+                        if (r, c) in cities:
+                            dc.SetBrush(wx.Brush('#bbbbbb'))
+                        else:
+                            dc.SetBrush(wx.Brush('#dcdcdc'))
+                    elif tiles[r][c] == 0:
+                        dc.SetBrush(wx.Brush('#ea3323'))
+                    elif tiles[r][c] == 1:
+                        dc.SetBrush(wx.Brush('#4a62d1'))
+                    else:
+                        dc.SetBrush(wx.Brush('#00c56c'))
+                    dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+
+                    if (r, c) in generals_list:
+                        dc.SetPen(wx.Pen('#000000', width=3))
+                        dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
+                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
+                        dc.SetPen(wx.Pen('#000000', width=1))
+
+                    if tiles[r][c] >= 0 or (r, c) in cities:
+                        dc.SetTextForeground((255, 255, 255))
+                        armies[r][c] = str(armies[r][c])
+                        if len(armies[r][c]) > 3:
+                            armies[r][c] = f"{armies[r][c][:3]}..."
+
+                        tw, th = dc.GetTextExtent(armies[r][c])
+                        dc.DrawText(armies[r][c], TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
+
+        self.Show(True)
+
+
+def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
@@ -25,12 +89,18 @@ def main():
                 mode_settings["consolidate"]["curr_tile"] = main_army
         except KeyError:
             break
-
-        rows, cols = state['rows'], state['cols']
+        rows = state['rows']
+        cols = state['cols']
         utils = GeneralUtils(rows, cols)
 
+        turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
+            state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], \
+            state['generals'], state['alives'], state['armies'], state['lands']
+
+        frame.state = state
+        wx.CallAfter(frame.Refresh)
+
         moves = []
-        turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], state['generals'], state['alives'], state['armies'], state['lands']
         unoccupied_cities = []
         for (r, c) in cities:
             if tiles[r][c] != our_flag:
@@ -41,7 +111,7 @@ def main():
 
         for i in range(len(generals_list)):
             if i != our_flag and generals_list[i] != (-1, -1) and alive[i]:
-                enemy_general=generals_list[i]
+                enemy_general = generals_list[i]
 
         enemy_flags = []
         for i in range(len(generals_list)):
@@ -53,11 +123,6 @@ def main():
         if mode != "scout":
             if turn > 800:
                 mode = "consolidate"
-            # elif turn > 150:
-            #     if turn % 100 < 25:
-            #         mode = "consolidate"
-            #     else:
-            #         mode = "explore"
             else:
                 mode = "explore"
 
@@ -69,7 +134,7 @@ def main():
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
 
-        print(mode)
+        # print(mode)
         if mode == "explore":
             pre = []
             empty = []
@@ -155,7 +220,6 @@ def main():
                     cities = unoccupied_cities
 
                     mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
-                    print(mode_settings["cities"]["queued_path"])
 
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
@@ -169,7 +233,6 @@ def main():
             main_army = utils.find_main(tiles, armies, our_flag)  # update main army to account for server lag
 
             if armies[main_army[0]][main_army[1]] < 100:
-                print("consolidating because not enough troops")
                 mode = "consolidate"
                 main_army = (general_r, general_c)
 
@@ -180,8 +243,6 @@ def main():
 
             if mode_settings["scout"]["scout_target"] is None or mode_settings["scout"]["scout_target"] == main_army:
                 far = utils.farthest(our_flag, tiles, cities)
-                # far = utils.farthest2(general_r, general_c, our_flag, tiles, armies, cities)
-                print(f"Updating scout target to {far}")
                 mode_settings["scout"]["scout_target"] = far
 
             if enemy_general is not None:
@@ -191,8 +252,7 @@ def main():
             c, d = mode_settings["scout"]["scout_target"]
 
             for offset in OFFSETS:
-                adj_r = a + offset[0]
-                adj_c = b + offset[1]
+                adj_r, adj_c = a + offset[0], b + offset[1]
                 if utils.in_bounds(adj_r, adj_c) and tiles[adj_r][adj_c] >= -1:
                     moves.append((adj_r, adj_c, utils.manhattan_dist(adj_r, adj_c, c, d, state, attack=True)))
 
@@ -202,7 +262,13 @@ def main():
             bm = moves[0]
             general.move(a, b, bm[0], bm[1])
             main_army = (bm[0], bm[1])
+    wx.CallAfter(frame.Destroy)
 
 
 if __name__ == "__main__":
-    main()
+    app = wx.App()
+    f = MyFrame(None, "Bot Visualizer")
+    thread = threading.Thread(target=main, args=[f])
+    thread.setDaemon(True)
+    thread.start()
+    app.MainLoop()
