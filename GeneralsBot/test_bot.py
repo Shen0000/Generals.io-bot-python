@@ -9,6 +9,7 @@ import wx
 
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+PLAYER_COLORS = ['#ea3323', '#4a62d1']
 TILE_SIZE = 30
 
 
@@ -56,10 +57,8 @@ class MyFrame(wx.Frame):
                             dc.SetBrush(wx.Brush('#bbbbbb'))
                         else:
                             dc.SetBrush(wx.Brush('#dcdcdc'))
-                    elif tiles[r][c] == 0:
-                        dc.SetBrush(wx.Brush('#ea3323'))
-                    elif tiles[r][c] == 1:
-                        dc.SetBrush(wx.Brush('#4a62d1'))
+                    elif tiles[r][c] >= 0:
+                        dc.SetBrush(wx.Brush(PLAYER_COLORS[tiles[r][c]]))
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
