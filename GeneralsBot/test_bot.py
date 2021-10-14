@@ -65,7 +65,12 @@ class MyFrame(wx.Frame):
 
                     if tiles[r][c] >= 0 or (r, c) in cities:
                         dc.SetTextForeground((255, 255, 255))
-                        dc.DrawText(str(armies[r][c]), TILE_SIZE * c + 10, TILE_SIZE * r + 8)
+                        armies[r][c] = str(armies[r][c])
+                        if len(armies[r][c]) > 3:
+                            armies[r][c] = f"{armies[r][c][:3]}..."
+
+                        tw, th = dc.GetTextExtent(armies[r][c])
+                        dc.DrawText(armies[r][c], TILE_SIZE * c + (TILE_SIZE - tw) // 2, TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
         self.Show(True)
 
