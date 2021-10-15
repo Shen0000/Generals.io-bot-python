@@ -256,11 +256,6 @@ def main(frame):
                 mode = "consolidate"
                 main_army = (general_r, general_c)
 
-            for flag in enemy_flags:
-                if generals_list[flag] in all_generals and alive[flag]:
-                    print(f"Enemy general found at: {generals_list[flag]}")
-                    enemy_general = generals_list[flag]
-
             if mode_settings["scout"]["scout_target"] is None or mode_settings["scout"]["scout_target"] == main_army:
                 far = utils.farthest(our_flag, tiles, cities)
                 mode_settings["scout"]["scout_target"] = far
@@ -282,6 +277,11 @@ def main(frame):
             bm = moves[0]
             general.move(a, b, bm[0], bm[1])
             main_army = (bm[0], bm[1])
+
+        for flag in enemy_flags:
+            if generals_list[flag] in all_generals and alive[flag]:
+                print(f"Enemy general found at: {generals_list[flag]}")
+                enemy_general = generals_list[flag]
 
         frame.state = state
         frame.info["mode"] = mode

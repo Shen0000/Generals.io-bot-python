@@ -1,5 +1,5 @@
 #!/bin/python
-from generals_client import generals
+import generals
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
