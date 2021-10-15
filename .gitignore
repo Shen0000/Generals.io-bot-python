@@ -128,6 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+.idea/
 config.py
 replays.txt
 test.txt
