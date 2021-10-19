@@ -4,6 +4,7 @@ import threading
 import time
 import ssl
 from websocket import create_connection, WebSocketConnectionClosedException
+from config import USER_ID
 from config import STORE_REPLAY
 
 
@@ -195,6 +196,9 @@ class Generals(object):
             except WebSocketConnectionClosedException:
                 break
             time.sleep(10)
+
+    def _get_stats(self):
+        self._send(['stars_and_rank', USER_ID])
 
     def _send(self, msg):
         try:
