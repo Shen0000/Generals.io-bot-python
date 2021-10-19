@@ -1,9 +1,10 @@
 import logging
-import math
+import time
 import threading
 
 from flood_fill import GeneralUtils
 from init_game import general
+from config import GAME_ID
 import wx
 
 
@@ -13,6 +14,7 @@ PLAYER_COLORS = ['#ea3323', '#4a62d1']
 TILE_SIZE = 30
 
 
+
 class MyFrame(wx.Frame):
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(800, 800))
@@ -20,8 +22,9 @@ class MyFrame(wx.Frame):
         self.panel.SetBackgroundColour("#E6E6E6")
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.state = None
-        self.info = {"mode": "Starting", "source": (-1, -1)}
-
+        self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
+        self.button = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (50, 50))
+        self.button.Bind(wx.EVT_BUTTON, self.onButton)
         self.Centre()
         self.Show()
 
@@ -29,6 +32,9 @@ class MyFrame(wx.Frame):
         dc = wx.PaintDC(self.panel)
         dc.DrawText(f"Mode: {self.info['mode']}", 600, 20)
         if self.state is not None:
+            if self.info['button']:
+                self.button.Destroy()
+                self.info['button'] = False
             turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
@@ -95,8 +101,21 @@ class MyFrame(wx.Frame):
                     dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                     dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     dc.SetPen(wx.Pen('#000000', width=1))
-
+        else:
+            if general.force:
+                dc.DrawText("Forcing", 100, 100)
+            else:
+                dc.DrawText("Not Forcing", 100, 100)
         self.Show(True)
+
+    def onButton(self, event):
+        if general.force:
+            general.force_start(GAME_ID, False)
+            general.force = False
+        else:
+            general.force_start(GAME_ID, True)
+            general.force = True
+        self.Refresh()
 
 
 def main(frame):
