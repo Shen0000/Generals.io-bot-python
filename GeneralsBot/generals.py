@@ -35,6 +35,7 @@ class Generals(object):
     # region is deprecated
     def __init__(self, userid, username, mode="1v1", gameid=None,
                  force_start=True, region=None):
+        self.force = force_start
         logging.debug("Creating connection")
         self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs":ssl.CERT_NONE})
         self._lock = threading.RLock()
@@ -76,6 +77,8 @@ class Generals(object):
         self._cities = []
         self._swamps = []
 
+    def force_start(self, game_id="", force=True):
+        self._send(["set_force_start", game_id, force])
     
     def move(self, x1, y1, x2, y2, move_half=False):
         if not self._seen_update:

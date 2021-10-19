@@ -3,7 +3,7 @@ from make_map import create_map
 
 TILE_SIZE = 30
 
-tiles, cities = create_map(data=[1, 1, 1, 0, 1, 2])
+tiles, cities = create_map(data=[0.5, 0.5, 1, 0, 1, 2])
 rows = len(tiles)
 cols = len(tiles[0])
 armies = [[0 for _ in range(cols)] for __ in range(rows)]
