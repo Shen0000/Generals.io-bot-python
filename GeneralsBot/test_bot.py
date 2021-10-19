@@ -1,5 +1,4 @@
 import logging
-import math
 import threading
 
 from flood_fill import GeneralUtils
@@ -66,8 +65,10 @@ class MyFrame(wx.Frame):
                     if (r, c) in all_generals:
                         dc.SetPen(wx.Pen('#000000', width=3))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
-                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
+                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2),
+                                      int(TILE_SIZE * 0.4))
                         dc.SetPen(wx.Pen('#000000', width=1))
+
                     if (r, c) in all_cities:
                         dc.SetPen(wx.Pen('#000000', width=2))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))

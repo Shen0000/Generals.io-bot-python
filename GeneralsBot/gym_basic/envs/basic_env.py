@@ -1,15 +1,15 @@
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
+import numpy as np
 
 
 class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        # There are two actions, first will get reward of 1, second reward of -1.
-        self.action_space = spaces.Discrete(5)
-        self.observation_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(28**2 * 4)
+        self.observation_space = spaces.Box(np.full((28, 28), -4), np.full((28, 28), 7))
 
     def step(self, action):
 

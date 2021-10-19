@@ -20,7 +20,7 @@ The whole grid is represented as a line:
 '''
 
 _ENDPOINT = "wss://botws.generals.io/socket.io/?EIO=3&transport=websocket"
-_REPLAY_URL = "http://bot.generals.io/replays/"
+_REPLAY_URL = "https://bot.generals.io/replays/"
 _REPLAY_ID = ""
 
 _RESULTS = {
@@ -34,9 +34,9 @@ class Generals(object):
 
     # region is deprecated
     def __init__(self, userid, username, mode="1v1", gameid=None,
-                 force_start=True, region=None):
+                 force_start=True):
         logging.debug("Creating connection")
-        self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs":ssl.CERT_NONE})
+        self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs": ssl.CERT_NONE})
         self._lock = threading.RLock()
 
         logging.debug("Starting heartbeat thread")
@@ -49,7 +49,7 @@ class Generals(object):
             if gameid is None:
                 raise ValueError("Gameid must be provided for private games")
             self._send(["join_private", gameid, userid])
-            print(f"Joined a custom game at link http://bot.generals.io/games/{gameid}")
+            print(f"Joined a custom game at link https://bot.generals.io/games/{gameid}")
 
         elif mode == "1v1":
             self._send(["join_1v1", userid])
@@ -76,7 +76,6 @@ class Generals(object):
         self._cities = []
         self._swamps = []
 
-    
     def move(self, x1, y1, x2, y2, move_half=False):
         if not self._seen_update:
             raise ValueError("Cannot move before first map seen")
@@ -112,13 +111,13 @@ class Generals(object):
 
             if msg[0] == "error_user_id":
                 raise ValueError("Already in game")
-            elif msg[0]== 'pre_game_start':
+            elif msg[0] == 'pre_game_start':
                 logging.info("Game Prepare to Start")
             elif msg[0] == "game_start":
                 logging.info("Game info: {}".format(msg[1]))
                 self._start_data = msg[1]
                 _REPLAY_ID = msg[1]['replay_id']
-                if STORE_REPLAY: #store the replay link in a separate file
+                if STORE_REPLAY:  # store the replay link in a separate file
                     print("Storing replay...")
                     with open("replays.txt", "a") as results:
                         results.write(_REPLAY_URL + _REPLAY_ID + '\n')
@@ -143,8 +142,8 @@ class Generals(object):
 
         rows, cols = self._map[1], self._map[0]
         self._seen_update = True
-        if self._swamps==[]:
-            self._swamps=[(c // cols, c % cols) for c in self._start_data['swamps']]
+        if not self._swamps:
+            self._swamps = [(c // cols, c % cols) for c in self._start_data['swamps']]
         # sort by player index
         scores = {d['i']: d for d in data['scores']}
         scores = [scores[i] for i in range(len(scores))]
@@ -225,4 +224,3 @@ def _apply_diff(cache, diff):
         i += 1
 
     assert i == len(diff)
-

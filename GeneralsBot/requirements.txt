@@ -1,3 +1,5 @@
+gym
+gym[pachi]
+numpy
 websocket-client
 wxpython
-gym
