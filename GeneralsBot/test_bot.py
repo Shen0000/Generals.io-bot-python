@@ -43,7 +43,7 @@ class MyFrame(wx.Frame):
                 for c in range(len(tiles[0])):
                     if tiles[r][c] in (-3, -4):
                         dc.SetBrush(wx.Brush('#393939'))
-                    elif tiles[r][c] == -2:
+                    elif tiles[r][c] in (-4, -2):
                         dc.SetBrush(wx.Brush('#bbbbbb'))
                         dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                         mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
@@ -97,13 +97,22 @@ class MyFrame(wx.Frame):
                     dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     dc.SetPen(wx.Pen('#000000', width=1))
 
+                if self.info["mode"] in ("consolidate", "cities", "scout"):
+                    for i in range(len(self.info["queued_path"][:-1])):
+                        dc.SetPen(wx.Pen('#ffffff', width=2))
+                        dc.DrawLine(int((self.info["queued_path"][i][1] + 1/2) * TILE_SIZE),
+                                    int((self.info["queued_path"][i][0] + 1/2) * TILE_SIZE),
+                                    int((self.info["queued_path"][i + 1][1]+ 1/2) * TILE_SIZE),
+                                    int((self.info["queued_path"][i + 1][0] + 1/2) * TILE_SIZE))
+                        dc.SetPen(wx.Pen('#000000', width=1))
+
         self.Show(True)
 
 
 def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
-    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"queued_path": []}}
     all_cities, all_generals = set(), set()
 
     for state in general.get_updates():
@@ -156,6 +165,9 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
 
+        frame.state = state
+        frame.info["mode"] = mode
+
         if mode == "explore":
             pre = []
             empty = []
@@ -207,6 +219,7 @@ def main(frame):
                 while len(mode_settings["consolidate"]["queued_path"]) < 2:
                     mode_settings["consolidate"]["queued_path"] = utils.farthest4(general_r, general_c, state)
 
+            frame.info["queued_path"] = mode_settings["consolidate"]["queued_path"]
             a, b = mode_settings["consolidate"]["queued_path"].pop(0)
             c, d = mode_settings["consolidate"]["queued_path"][0]
             general.move(a, b, c, d)
@@ -242,6 +255,7 @@ def main(frame):
 
                     mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
 
+            frame.info["queued_path"] = mode_settings["cities"]["queued_path"]
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
             general.move(a, b, c, d)
@@ -252,40 +266,27 @@ def main(frame):
 
         elif mode == "scout":
             main_army = utils.find_main(tiles, armies, our_flag)  # update main army to account for server lag
-
             if armies[main_army[0]][main_army[1]] < 100:
                 mode = "consolidate"
-                main_army = (general_r, general_c)
+                continue
 
-            if mode_settings["scout"]["scout_target"] is None or mode_settings["scout"]["scout_target"] == main_army:
-                far = utils.farthest(our_flag, tiles, cities)
-                mode_settings["scout"]["scout_target"] = far
+            if enemy_general is not None and mode_settings["scout"]["queued_path"][-1] != enemy_general:
+                mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state, enemy_general[0], enemy_general[1])
 
-            if enemy_general is not None:
-                mode_settings["scout"]["scout_target"] = enemy_general
+            elif len(mode_settings["scout"]["queued_path"]) <= 1:
+                while len(mode_settings["scout"]["queued_path"]) < 2:
+                    mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
 
-            a, b = main_army
-            c, d = mode_settings["scout"]["scout_target"]
-
-            for offset in OFFSETS:
-                adj_r, adj_c = a + offset[0], b + offset[1]
-                if utils.in_bounds(adj_r, adj_c) and tiles[adj_r][adj_c] >= -1:
-                    moves.append((adj_r, adj_c, utils.manhattan_dist(adj_r, adj_c, c, d, state, attack=True)))
-
-            moves = sorted(moves, key=lambda x: x[2])
-
-            assert len(moves)
-            bm = moves[0]
-            general.move(a, b, bm[0], bm[1])
-            main_army = (bm[0], bm[1])
+            frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
+            a, b = mode_settings["scout"]["queued_path"].pop(0)
+            c, d = mode_settings["scout"]["queued_path"][0]
+            general.move(a, b, c, d)
 
         for flag in enemy_flags:
             if generals_list[flag] in all_generals and alive[flag]:
                 print(f"Enemy general found at: {generals_list[flag]}")
                 enemy_general = generals_list[flag]
 
-        frame.state = state
-        frame.info["mode"] = mode
         frame.info["source"] = (a, b)
         wx.CallAfter(frame.Refresh)
 

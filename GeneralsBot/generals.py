@@ -50,6 +50,7 @@ class Generals(object):
                 raise ValueError("Gameid must be provided for private games")
             self._send(["join_private", gameid, userid])
             print(f"Joined a custom game at link https://bot.generals.io/games/{gameid}")
+            self._send(["set_custom_options", gameid, {"game_speed": 4}])
 
         elif mode == "1v1":
             self._send(["join_1v1", userid])
@@ -83,7 +84,6 @@ class Generals(object):
         cols = self._map[0]
         a = x1 * cols + y1
         b = x2 * cols + y2
-        # print(a, b)
         self._send(["attack", a, b, move_half, self._move_id])
         self._move_id += 1
 
