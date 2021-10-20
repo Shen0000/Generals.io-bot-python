@@ -24,7 +24,23 @@ class MyFrame(wx.Frame):
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
         self.button = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (50, 50))
-        self.button.Bind(wx.EVT_BUTTON, self.onButton)
+        self.button.Bind(wx.EVT_BUTTON, self.onButtonForce)
+        self.speedp25 = wx.Button(self.panel, .25, "0.25", (300, 50))
+        self.speedp5 = wx.Button(self.panel, .5, "0.5", (300, 100))
+        self.speedp75 = wx.Button(self.panel, .75, "0.75", (300, 150))
+        self.speed1 = wx.Button(self.panel, 1, "1", (300, 200))
+        self.speed1p5 = wx.Button(self.panel, 1.5, "1.5", (300, 250))
+        self.speed2 = wx.Button(self.panel, 2, "2", (300, 300))
+        self.speed3 = wx.Button(self.panel, 3, "3", (300, 350))
+        self.speed4 = wx.Button(self.panel, 4, "4", (300, 400))
+        self.speedp25.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speedp5.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speedp75.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speed1.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speed1p5.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speed2.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speed3.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.speed4.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
         self.Centre()
         self.Show()
 
@@ -34,7 +50,16 @@ class MyFrame(wx.Frame):
         if self.state is not None:
             if self.info['button']:
                 self.button.Destroy()
+                self.speedp25.Destroy()
+                self.speedp5.Destroy()
+                self.speedp75.Destroy()
+                self.speed1.Destroy()
+                self.speed1p5.Destroy()
+                self.speed2.Destroy()
+                self.speed3.Destroy()
+                self.speed4.Destroy()
                 self.info['button'] = False
+
             turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
@@ -102,13 +127,14 @@ class MyFrame(wx.Frame):
                     dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     dc.SetPen(wx.Pen('#000000', width=1))
         else:
+            dc.DrawText("Speed: ", 320, 25)
             if general.force:
                 dc.DrawText("Forcing", 100, 100)
             else:
                 dc.DrawText("Not Forcing", 100, 100)
         self.Show(True)
 
-    def onButton(self, event):
+    def onButtonForce(self, event):
         if general.force:
             general.force_start(GAME_ID, False)
             general.force = False
@@ -116,6 +142,10 @@ class MyFrame(wx.Frame):
             general.force_start(GAME_ID, True)
             general.force = True
         self.Refresh()
+    
+    def onButtonSpeed(self, event):
+        btn = event.GetEventObject().GetLabel() 
+        general.set_game_speed(btn)
 
 
 def main(frame):
