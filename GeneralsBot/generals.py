@@ -12,6 +12,7 @@ EMPTY = -1
 MOUNTAIN = -2
 FOG = -3
 OBSTACLE = -4
+MAX_NUM_TEAMS = 12
 
 '''
 swamp locations are given at the beginning of the game as a single value.
@@ -74,6 +75,7 @@ class Generals(object):
 
         self._seen_update = False
         self._move_id = 1
+        self._gameid = gameid
         self._start_data = {}
         self._stars = []
         self._map = []
@@ -198,6 +200,38 @@ class Generals(object):
                 break
             time.sleep(10)
 
+    def set_game_speed(self, speed="1"):
+	    speed = float(speed)
+	    self._send(["set_custom_options", self._gameid, {"game_speed":speed}])
+
+    def set_game_team(self, team="1"):
+	    team = int(team)
+	    if team in range(1, MAX_NUM_TEAMS+1):
+	    	self._send(["set_custom_team", self._gameid, team])
+
+    def set_game_public(self):
+	    self._send(["make_custom_public", self._gameid])
+
+    def set_game_map(self, mapname=""):
+	    if len(mapname) > 1:
+	    	self._send(["set_custom_options", self._gameid, {"map":mapname}])
+
+    def set_normal_map(self, width=-1, height=-1, city=-1, mountain=-1, swamp=-1):
+	    self._send(["set_custom_options", self._gameid, {"map":None}])
+	    if width >= 0 and width <=1:
+	    	self._send(["set_custom_options", self._gameid, {"width":width}])
+	    if height >= 0 and height <=1:
+	    	self._send(["set_custom_options", self._gameid, {"height":height}])
+	    if city >= 0 and city <=1:
+	    	self._send(["set_custom_options", self._gameid, {"city_density":city}])
+	    if mountain >= 0 and mountain <=1:
+	    	self._send(["set_custom_options", self._gameid, {"mountain_density":mountain}])
+	    if swamp >= 0 and swamp <=1:
+	    	self._send(["set_custom_options", self._gameid, {"swamp_density":swamp}])
+
+    def send_surrender(self):
+    	self._send(["surrender"])
+    
     def _get_stats(self):
         self._send(['stars_and_rank', USER_ID])
 
