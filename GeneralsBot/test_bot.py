@@ -8,6 +8,7 @@ import wx
 
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+ARROW_OFFSETS = {"shaft": [-0.25, 0.25], "head": [(-0.1, -0.1), (0.1, -0.1)]}
 PLAYER_COLORS = ['#ea3323', '#4a62d1']
 TILE_SIZE = 30
 
@@ -26,7 +27,7 @@ class MyFrame(wx.Frame):
 
     def repaint(self, event):
         dc = wx.PaintDC(self.panel)
-        dc.DrawText(f"Mode: {self.info['mode']}", 600, 20)
+        dc.DrawText(f"Mode: {self.info['mode']}", 650, 20)
         if self.state is not None:
             turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
@@ -35,21 +36,24 @@ class MyFrame(wx.Frame):
                 self.state['all_cities'], self.state['all_generals']
 
             for i, username in enumerate(self.state["usernames"]):
-                dc.DrawText(f"{username}'s Army: {army_size[i]}", 600, 40 + i * 20)
-                dc.DrawText(f"{username}'s Land: {land_size[i]}", 800, 40 + i * 20)
+                dc.DrawText(f"{username}'s Army: {army_size[i]}", 100, 700 + i * 20)
+                dc.DrawText(f"{username}'s Land: {land_size[i]}", 400, 700 + i * 20)
 
             dc.SetPen(wx.Pen('#000000', width=1))
             for r in range(len(tiles)):
                 for c in range(len(tiles[0])):
-                    if tiles[r][c] in (-3, -4):
+                    if tiles[r][c] == -3:
                         dc.SetBrush(wx.Brush('#393939'))
                     elif tiles[r][c] in (-4, -2):
-                        dc.SetBrush(wx.Brush('#bbbbbb'))
+                        dc.SetPen(wx.Pen('#000000', width=1))
+                        dc.SetBrush(wx.Brush('#bbbbbb' if tiles[r][c] == -2 else '#393939'))
                         dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                        mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
-                        for mountain in mountains:
-                            dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
-                                        mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
+
+                        if (r, c) not in all_cities:
+                            mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
+                            for mountain in mountains:
+                                dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
+                                            mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                     elif tiles[r][c] == -1:
                         if (r, c) in cities:
@@ -60,6 +64,11 @@ class MyFrame(wx.Frame):
                         dc.SetBrush(wx.Brush(PLAYER_COLORS[tiles[r][c]]))
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
+
+                    if tiles[r][c] <= -3:
+                        dc.SetPen(wx.Pen('#393939', width=1))
+                    else:
+                        dc.SetPen(wx.Pen('#000000', width=1))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
                     if (r, c) in all_generals:
@@ -92,19 +101,44 @@ class MyFrame(wx.Frame):
                                     TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
                 if self.info["source"] != (-1, -1):
-                    dc.SetPen(wx.Pen('#ffffff', width=3))
+                    dc.SetPen(wx.Pen('#ffffff', width=2))
                     dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                     dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     dc.SetPen(wx.Pen('#000000', width=1))
 
                 if self.info["mode"] in ("consolidate", "cities", "scout"):
+                    dc.SetPen(wx.Pen('#ffffff', width=1))
                     for i in range(len(self.info["queued_path"][:-1])):
-                        dc.SetPen(wx.Pen('#ffffff', width=2))
-                        dc.DrawLine(int((self.info["queued_path"][i][1] + 1/2) * TILE_SIZE),
-                                    int((self.info["queued_path"][i][0] + 1/2) * TILE_SIZE),
-                                    int((self.info["queued_path"][i + 1][1]+ 1/2) * TILE_SIZE),
-                                    int((self.info["queued_path"][i + 1][0] + 1/2) * TILE_SIZE))
-                        dc.SetPen(wx.Pen('#000000', width=1))
+                        start = self.info["queued_path"][i]
+                        end = self.info["queued_path"][i + 1]
+                        assert start != end
+                        if start[0] == end[0]:
+                            sign = 1 if start[1] < end[1] else -1
+                            head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
+                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                            center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
+                            dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
+                                        center_y, head_x, center_y
+                            )
+                            for j in range(2):
+                                dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
+                                            center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                                )
+                        else:
+                            sign = 1 if start[0] < end[0] else -1
+                            head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
+                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                            center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
+                            dc.DrawLine(center_x,
+                                        start[0] * TILE_SIZE + TILE_SIZE // 2
+                                        + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
+                                        )
+                            for j in range(2):
+                                dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
+                                        head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
+                                )
+
+                    dc.SetPen(wx.Pen('#000000', width=1))
 
         self.Show(True)
 
@@ -270,7 +304,7 @@ def main(frame):
                 mode = "consolidate"
                 continue
 
-            if enemy_general is not None and mode_settings["scout"]["queued_path"][-1] != enemy_general:
+            if enemy_general is not None and (len(mode_settings["scout"]["queued_path"]) == 0 or mode_settings["scout"]["queued_path"][-1] != enemy_general):
                 mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state, enemy_general[0], enemy_general[1])
 
             elif len(mode_settings["scout"]["queued_path"]) <= 1:
@@ -289,6 +323,11 @@ def main(frame):
 
         frame.info["source"] = (a, b)
         wx.CallAfter(frame.Refresh)
+
+    frame.info["mode"] = "Victory!"
+    wx.CallAfter(frame.Refresh)
+    while True:
+        pass
 
     wx.CallAfter(frame.Destroy)
 

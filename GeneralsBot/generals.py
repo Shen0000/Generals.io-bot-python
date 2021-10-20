@@ -50,6 +50,7 @@ class Generals(object):
                 raise ValueError("Gameid must be provided for private games")
             self._send(["join_private", gameid, userid])
             print(f"Joined a custom game at link https://bot.generals.io/games/{gameid}")
+            time.sleep(0.2)
             self._send(["set_custom_options", gameid, {"game_speed": 4}])
 
         elif mode == "1v1":
