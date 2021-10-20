@@ -1,7 +1,7 @@
 #!/bin/python
 import generals
 import logging
-from config import USER_ID, USER_NAME,GAME_ID
+from config import USER_ID, USER_NAME, GAME_ID
 
 logging.basicConfig(level=logging.DEBUG)
 

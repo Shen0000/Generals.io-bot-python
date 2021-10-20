@@ -1,6 +1,6 @@
 import random
 
-MIN, MAX = 15, 25
+MIN, MAX = 16, 28
 
 def flood(grid, flag):
     print("flood filling...")
