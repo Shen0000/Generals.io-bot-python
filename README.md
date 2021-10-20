@@ -23,3 +23,6 @@ in the ```config.py``` you will have 4 variables:
 change these variables for your personal bot
 
 you do not need to make the ```replays.txt``` file
+
+## Reinforcement Learning
+```python setup.py install```

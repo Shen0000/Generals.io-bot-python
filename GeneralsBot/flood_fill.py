@@ -27,6 +27,67 @@ class GeneralUtils:
 
         return -1, -1, -1
 
+    def farthest5(self, r, c, state, enemy_r=None, enemy_c=None):
+        our_flag, tiles, armies, cities = state["player_index"], state['tile_grid'], state["army_grid"], state['cities']
+        prev_tile = [[(-1, -1) for _ in range(self.cols)] for _ in range(self.rows)]
+        fringe_lvls = [[-1 for _ in range(self.cols)] for _ in range(self.rows)]
+        fringe_lvls[r][c] = 0
+        fringe_level = 1
+
+        queue = []
+        fringe = []
+
+        for offset in OFFSETS:
+            adj_r = r + offset[0]
+            adj_c = c + offset[1]
+            if self.in_bounds(adj_r, adj_c) and not (tiles[adj_r][adj_c] in OBSTACLES or (adj_r, adj_c) in cities):
+                queue.append((adj_r, adj_c))
+
+        while len(queue) > 0:
+            a, b = queue.pop(0)
+            if fringe_lvls[a][b] > -1 or tiles[a][b] in OBSTACLES or (a, b) in cities:
+                if len(queue) == 0 and len(fringe) > 0:
+                    queue = fringe
+                    fringe = []
+                    fringe_level += 1
+                continue
+
+            fringe_lvls[a][b] = fringe_level
+
+            max_army = -1
+            adj_tile = (-1, -1)
+            for offset in OFFSETS:
+                adj_r = a + offset[0]
+                adj_c = b + offset[1]
+                if self.in_bounds(adj_r, adj_c) and not (tiles[adj_r][adj_c] in OBSTACLES):
+                    if fringe_lvls[adj_r][adj_c] == -1:
+                        fringe.append((adj_r, adj_c))
+                    elif fringe_lvls[adj_r][adj_c] - fringe_level == -1 and max_army < armies[adj_r][adj_c]:
+                        max_army = armies[adj_r][adj_c]
+                        adj_tile = (adj_r, adj_c)
+
+            assert adj_tile != (-1, -1), "ffff"
+            prev_tile[a][b] = adj_tile
+
+            if len(queue) == 0 and len(fringe) > 0:
+                queue = fringe
+                fringe = []
+                fringe_level += 1
+
+        if enemy_r is None:
+            max_path = [(self.farthest(our_flag, tiles, cities))]
+            a, b = max_path[0]
+        else:
+            assert enemy_c is not None
+            max_path = [(enemy_r, enemy_c)]
+            a, b = max_path[0]
+
+        while (a, b) != (r, c):
+            a, b = prev_tile[a][b]
+            max_path.append((a, b))
+
+        return max_path[::-1]
+
     def farthest4(self, r, c, state):
         our_flag, tiles, armies, cities = state["player_index"], state['tile_grid'], state["army_grid"], state['cities']
         dists = [[0 for _ in range(self.cols)] for _ in range(self.rows)]
@@ -44,7 +105,6 @@ class GeneralUtils:
             adj_r = r + offset[0]
             adj_c = c + offset[1]
             if self.in_bounds(adj_r, adj_c) and not (tiles[adj_r][adj_c] in OBSTACLES or (adj_r, adj_c) in cities):
-                # dists[adj_r][adj_c] = armies[r][c]
                 queue.append((adj_r, adj_c))
 
         while len(queue) > 0:
@@ -69,9 +129,14 @@ class GeneralUtils:
                     elif fringe_lvls[adj_r][adj_c] - fringe_level == -1 and max_dist < dists[adj_r][adj_c]:
                         max_dist = dists[adj_r][adj_c]
                         adj_tile = (adj_r, adj_c)
-                    # fringe_lvls[adj_r][adj_c] = fringe_level
 
-            dists[a][b] = max_dist + armies[a][b] - 1
+            if tiles[a][b] == our_flag:
+                max_dist += armies[a][b] - 1
+            elif tiles[a][b] >= 0 and tiles[a][b] != our_flag:
+                max_dist -= (armies[a][b] + 1)
+
+            dists[a][b] = max_dist
+
             prev_tile[a][b] = adj_tile
 
             if len(queue) == 0 and len(fringe) > 0:
