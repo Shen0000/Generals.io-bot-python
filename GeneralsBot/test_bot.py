@@ -26,22 +26,10 @@ class MyFrame(wx.Frame):
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
         self.button = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (50, 50))
         self.button.Bind(wx.EVT_BUTTON, self.onButtonForce)
-        self.speedp25 = wx.Button(self.panel, .25, "0.25", (300, 50))
-        self.speedp5 = wx.Button(self.panel, .5, "0.5", (300, 100))
-        self.speedp75 = wx.Button(self.panel, .75, "0.75", (300, 150))
-        self.speed1 = wx.Button(self.panel, 1, "1", (300, 200))
-        self.speed1p5 = wx.Button(self.panel, 1.5, "1.5", (300, 250))
-        self.speed2 = wx.Button(self.panel, 2, "2", (300, 300))
-        self.speed3 = wx.Button(self.panel, 3, "3", (300, 350))
-        self.speed4 = wx.Button(self.panel, 4, "4", (300, 400))
-        self.speedp25.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speedp5.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speedp75.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speed1.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speed1p5.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speed2.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speed3.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
-        self.speed4.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.buttons = [wx.Button(self.panel, speed, str(speed), (300, 50 + i * 50)) for i, speed in enumerate([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4])]
+        for button_el in self.buttons:
+            button_el.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+
         self.Centre()
         self.Show()
 
@@ -51,15 +39,9 @@ class MyFrame(wx.Frame):
         if self.state is not None:
             if self.info['button']:
                 self.button.Destroy()
-                self.speedp25.Destroy()
-                self.speedp5.Destroy()
-                self.speedp75.Destroy()
-                self.speed1.Destroy()
-                self.speed1p5.Destroy()
-                self.speed2.Destroy()
-                self.speed3.Destroy()
-                self.speed4.Destroy()
                 self.info['button'] = False
+                for button_el in self.buttons:
+                    button_el.Destroy()
 
             tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['tile_grid'], self.state['army_grid'], \
