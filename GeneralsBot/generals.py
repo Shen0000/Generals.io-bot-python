@@ -76,6 +76,7 @@ class Generals(object):
         self._seen_update = False
         self._move_id = 1
         self._gameid = gameid
+        self._num_players = 2
         self._start_data = {}
         self._stars = []
         self._map = []
@@ -136,6 +137,7 @@ class Generals(object):
                 break
             elif msg[0] == "queue_update":
                 logging.info("queue update {}".format(msg[1]))
+                self._num_players = msg[1]['numPlayers']
             else:
                 logging.info("Unknown message type: {}".format(msg))
 

@@ -61,8 +61,8 @@ class MyFrame(wx.Frame):
                 self.speed4.Destroy()
                 self.info['button'] = False
 
-            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
-                self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
+            tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
+                self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
                 self.state['alives'], self.state['armies'], self.state['lands'], \
                 self.state['all_cities'], self.state['all_generals']
@@ -199,8 +199,15 @@ def main(frame):
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"queued_path": []}}
     all_cities, all_generals = set(), set()
+    won = False
 
     for state in general.get_updates():
+        if state['complete']:
+            if state['result']:
+                won = True
+            else:
+                won = False
+        frame.state = state
         our_flag = state['player_index']
         try:
             general_r, general_c = state['generals'][our_flag]
@@ -250,7 +257,6 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
 
-        frame.state = state
         frame.info["mode"] = mode
 
         if mode == "explore":
@@ -374,12 +380,17 @@ def main(frame):
 
         frame.info["source"] = (a, b)
         wx.CallAfter(frame.Refresh)
-
-    frame.info["mode"] = "Victory!"
+    time.sleep(1)
+    if won:
+        frame.info["mode"] = "Victory!"
+    else:
+        frame.info["mode"] = "Defeat!"
     wx.CallAfter(frame.Refresh)
+    cnt=0
     while True:
-        pass
-
+        time.sleep(1)
+        print(cnt)
+        cnt+=1
     wx.CallAfter(frame.Destroy)
 
 
