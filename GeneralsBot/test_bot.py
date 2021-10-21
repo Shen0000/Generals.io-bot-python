@@ -13,7 +13,7 @@ import wx
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 ARROW_OFFSETS = {"shaft": [-0.25, 0.25], "head": [(-0.1, -0.1), (0.1, -0.1)]}
-PLAYER_COLORS = ['#ea3323', '#4a62d1']
+PLAYER_COLORS = ['#ea3323', '#4363d8', '#027f00', '#008080', '#f58231', '#f032e6', '#800080', '#800001', '#b09f30', '#9a6324', '#0000ff', '#483d8a']
 TILE_SIZE = 30
 
 
