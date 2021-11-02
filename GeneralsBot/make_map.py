@@ -1,6 +1,20 @@
 import random
+import math
+import sys
 
 MIN, MAX = 16, 28
+CMIN, CMAX = 40, 50
+sys.setrecursionlimit(10000)
+
+'''
+tiles = arr
+armies = arr
+turn = 0
+lands = [0, 0]
+armies [0, 0]
+generals = [(), (-1, -1)]
+'''
+
 
 def flood(grid, flag):
     print("flood filling...")
@@ -33,8 +47,7 @@ def flood(grid, flag):
 def create_map(data):
     length, width, city_density, swamp_density, mountain_density, num_players = data
     assert num_players > 1 
-    grid = []
-    cities = []
+    grid, armies, cities, generalloc = [], [], [], []
     rows, cols = 0, 0
     rows = MIN + int(MIN*length) + random.randint(-2, 2)
     cols = MIN + int(MIN*width) + random.randint(-2, 2)
@@ -43,6 +56,7 @@ def create_map(data):
     #print(rows, cols)
     for i in range(rows):
         grid.append([-1 for j in range(cols)])
+        armies.append([0 for j in range(cols)])
     num_mountains = int(100 * mountain_density) + int((length + width)/2 * 40) + random.randint(-5, 5)
     num_cities = int(10 * city_density) * num_players + random.randint(0, num_players)
     #print(num_mountains)
@@ -61,6 +75,14 @@ def create_map(data):
         if rand not in filled:
             filled.add(rand)
             cities.append((rand // cols, rand % cols))
+            armies[rand//cols][rand%cols] = random.randint(CMIN, CMAX)
+            cnt+=1
+    cnt = 0
+    while cnt < num_players:
+        rand = random.randint(0, rows*cols-1)
+        if rand not in filled:
+            filled.add(rand)
+            generalloc.append((rand // cols, rand % cols))
             cnt+=1
     '''
     tot = 0
@@ -72,12 +94,12 @@ def create_map(data):
     print(tot)
     print(cities)
     '''
-    if valid(grid):
-        return grid, cities
+    if valid(grid, generalloc):
+        return grid, cities, armies, generalloc
     else:
-        create_map(data)
+        return create_map(data)
 
-def valid(grid):
+def valid(grid, generalloc):
     print("checking validation...")
     components = flood(grid, -1)
     components.sort(reverse=True)
@@ -86,6 +108,15 @@ def valid(grid):
         empty_tiles += component
     largest = components[0]
     frac = largest/empty_tiles
+    n = len(generalloc)
+    for i in range(n):
+        x = generalloc[i]
+        for j in range(i+1, n):
+            y = generalloc[j]
+            dist = math.sqrt(abs(x[0]-y[0])**2 + abs(x[1]-y[1])**2)
+            if dist<=25:
+                print(generalloc)
+                return False
     if frac<.90:
         print("remaking map")
     return frac>=.90
@@ -98,7 +129,8 @@ if __name__ == "__main__":
     mountain_density = 1
     num_players = 2
     data = [length, width, city_density, swamp_density, mountain_density, num_players]
-    grid, cities = create_map(data)
+    grid, cities, armies, generalslocations = create_map(data)
+    print(generalslocations)
 
 '''
 Testing:
