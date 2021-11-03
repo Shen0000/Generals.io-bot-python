@@ -2,6 +2,10 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
+import pathlib, sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
+from GeneralsBot.make_map import create_map
 
 """
 Tile Embedding:
@@ -28,20 +32,7 @@ Obstacle indicators
 Mountain indicators
 Empty indicator
 Empty * City (to get city values)
-
-
-Army values on friendly tiles
-Army values on enemy tiles
-indicators for obstacles
-army values on neutral cities
-indicator for mountains
-indicator for generals
-Fog/Visible
-army values for self owned cities
-army values for enemy owned cities
-
-
-
+General indicator (-1, 0, 1)
 """
 
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -51,20 +42,22 @@ class BasicEnv(gym.Env):
 
     def __init__(self):
         self.SIZE = 28
+        self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
         self.action_space = spaces.Discrete(self.SIZE**2 * 4)
-        self.observation_space = spaces.Box(np.full((self.SIZE, self.SIZE, self.EMBED_SIZE), -1), np.full((self.SIZE, self.SIZE, self.EMBED_SIZE), 1))
+        self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1),
+                                            np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1))
 
-        self.state = {"tiles": np.full((self.SIZE, self.SIZE), -3),
-                      "armies": np.full((self.SIZE, self.SIZE), 0),
-                      "cities": [],
+        tiles, cities, armies, generals = create_map([0.5, 0.5, 1, 0, 1, 2])
+        self.state = {"tiles": tiles,
+                      "armies": armies,
+                      "cities": cities,
                       "turn": 0,
                       "total_land": [0, 0],
                       "total_army": [0, 0],
-                      "generals": [(12, 18), (8, 2)],  # TODO: generals, cities, tiles, armies should be generated
+                      "generals": generals,  # TODO: generals, cities, tiles, armies should be generated
                       }
-
-        print(self.action_space)
+        self._state_to_obs()
 
     def step(self, action):
         assert self.action_space.contains(action)
@@ -93,6 +86,27 @@ class BasicEnv(gym.Env):
         """
         raise NotImplementedError  # TODO
 
+    def _state_to_obs(self):
+        _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
+        ownership = _tile_to_owner(self.state["tiles"])
+        city_indicators = np.zeros(self.GRID_DIM, dtype=bool)
+        for city_r, city_c in self.state["cities"]:
+            city_indicators[city_r][city_c] = 1
+
+        general_indicators = np.zeros(self.GRID_DIM, dtype=bool)
+        for gen_r, gen_c in self.state["cities"]:
+            general_indicators[gen_r][gen_c] = 1
+
+        obstacle_indicators = self.state["tiles"] == -4
+        fog_indicators = self.state["tiles"] <= -3
+        mountain_indicators = self.state["tiles"] == -2
+        empty_indicators = self.state["tiles"] == -1
+        return np.stack([
+            ownership, self.state["armies"], ownership * self.state["armies"],
+            city_indicators, ownership * city_indicators, obstacle_indicators,
+            fog_indicators, mountain_indicators, empty_indicators, general_indicators
+        ])
+
     def get_states(self):
         return self.state
 
@@ -108,3 +122,7 @@ class BasicEnv(gym.Env):
 
     def in_bounds(self, r=0, c=0):
         return 0 <= r < self.EMBED_SIZE and 0 <= c < self.EMBED_SIZE
+
+
+if __name__ == "__main__":
+    env = BasicEnv()
