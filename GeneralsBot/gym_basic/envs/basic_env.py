@@ -46,6 +46,13 @@ army values for enemy owned cities
 
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
+
+def valid_move(r, c, r2, c2):
+    for o in OFFSETS:
+        if (r + o[0], c + o[1]) == (r2, c2):
+            return True
+    return False
+
 class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -91,6 +98,53 @@ class BasicEnv(gym.Env):
         Ideally also figure out how the action itself will work,
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
+        if valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1:
+            if self.state['tiles'][adj_r, adj_c] == 0: # moving to own tile
+                self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
+                self.state['armies'][r, c] = 1
+            elif self.state['tiles'][adj_r, adj_c] == 1: # moving onto enemy tile
+                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1) # update total army for both players
+                self.state['total_army'][1] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1)
+                self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
+                self.state['armies'][r, c] = 1
+                if self.state['armies'][adj_r, adj_c] < 0:
+                    self.state['total_land'][0]+=1
+                    self.state['total_land'][1]-=1
+                    self.state['tiles'][adj_r, adj_c] = 0
+                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c]) -1
+            elif (adj_r, adj_c) in self.state['cities']: # moving to a neutral city tile
+                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1) # update total army after using troops to capture city
+                self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
+                self.state['armies'][r, c] = 1
+                if self.state['armies'][adj_r, adj_c] < 0:
+                    self.state['total_land'][0]+=1
+                    self.state['tiles'][adj_r, adj_c] = 0
+                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c]) -1
+            elif self.state['tiles'][adj_r, adj_c] == -1: # moving to an empty tile
+                self.state['tiles'][adj_r, adj_c] = 0
+                self.state['total_land'][0]+=1
+                self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
+                self.state['armies'][r, c] = 1
+            
+
+
+        self.state['turn']+=1
+        g1, g2 = self.state['generals']
+        self.state["total_army"][0]+=1
+        self.state["total_army"][1]+=1
+        self.state['armies'][g1[0], g1[1]]+=1
+        self.state['armies'][g2[0], g2[1]]+=1
+        if self.state['turn'] % 25 == 0: # every 25 turns all land is increased by 1
+            for row in range(self.SIZE):
+                for col in range(self.SIZE):
+                    if self.state['tiles'][row][col] >= 0:
+                        self.state['armies'][row][col]+=1
+        for (a, b) in self.state['cities']:
+            if self.state['tiles'][a, b] > -1:
+                self.state['total_army'][self.state['tiles'][a, b]]+=1
+                self.state['armies'][a, b]+=1
+        
+
         raise NotImplementedError  # TODO
 
     def get_states(self):
