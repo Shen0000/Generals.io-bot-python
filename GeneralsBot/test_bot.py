@@ -2,6 +2,8 @@ import logging
 import time
 import threading
 
+from wx.core import Height, Width
+
 from flood_fill import GeneralUtils
 from init_game import general
 from config import GAME_ID
@@ -11,7 +13,7 @@ import wx
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 ARROW_OFFSETS = {"shaft": [-0.25, 0.25], "head": [(-0.1, -0.1), (0.1, -0.1)]}
-PLAYER_COLORS = ['#ea3323', '#4a62d1']
+PLAYER_COLORS = ['#ea3323', '#4363d8', '#027f00', '#008080', '#f58231', '#f032e6', '#800080', '#800001', '#b09f30', '#9a6324', '#0000ff', '#483d8a']
 TILE_SIZE = 30
 
 
@@ -24,11 +26,13 @@ class MyFrame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
-        self.button = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (50, 50))
-        self.button.Bind(wx.EVT_BUTTON, self.onButtonForce)
-        self.buttons = [wx.Button(self.panel, speed, str(speed), (300, 50 + i * 50)) for i, speed in enumerate([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4])]
-        for button_el in self.buttons:
-            button_el.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        self.image = wx.Image('GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
+        self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
+        self.buttonForce = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (640, 125))
+        self.buttonForce.Bind(wx.EVT_BUTTON, self.onButtonForce)
+        self.buttons = [wx.Button(self.panel, speed, str(speed), (660, 275 + i * 50)) for i, speed in enumerate([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4])]
+        for buttonSpeed in self.buttons:
+            buttonSpeed.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
 
         self.Centre()
         self.Show()
@@ -38,10 +42,11 @@ class MyFrame(wx.Frame):
         dc.DrawText(f"Mode: {self.info['mode']}", 650, 20)
         if self.state is not None:
             if self.info['button']:
-                self.button.Destroy()
+                self.buttonForce.Destroy()
+                self.imageBitmap.Destroy()
                 self.info['button'] = False
-                for button_el in self.buttons:
-                    button_el.Destroy()
+                for buttonSpeed in self.buttons:
+                    buttonSpeed.Destroy()
 
             tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['tile_grid'], self.state['army_grid'], \
@@ -154,11 +159,12 @@ class MyFrame(wx.Frame):
 
                     dc.SetPen(wx.Pen('#000000', width=1))
         else:
-            dc.DrawText("Speed: ", 320, 25)
+            dc.DrawText("Control Panel", 660, 75)
+            dc.DrawText("Speed: ", 680, 250)
             if general.force:
-                dc.DrawText("Forcing", 100, 100)
+                dc.DrawText("Forcing", 680, 175)
             else:
-                dc.DrawText("Not Forcing", 100, 100)
+                dc.DrawText("Not Forcing", 665, 175)
 
         self.Show(True)
 
@@ -189,7 +195,6 @@ def main(frame):
                 won = True
             else:
                 won = False
-        frame.state = state
         our_flag = state['player_index']
         try:
             general_r, general_c = state['generals'][our_flag]
@@ -238,7 +243,8 @@ def main(frame):
                     mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
-
+        
+        frame.state = state
         frame.info["mode"] = mode
 
         if mode == "explore":
