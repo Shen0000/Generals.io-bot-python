@@ -111,7 +111,7 @@ class BasicEnv(gym.Env):
                     self.state['total_land'][0]+=1
                     self.state['total_land'][1]-=1
                     self.state['tiles'][adj_r, adj_c] = 0
-                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c]) -1
+                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
             elif (adj_r, adj_c) in self.state['cities']: # moving to a neutral city tile
                 self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1) # update total army after using troops to capture city
                 self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
@@ -119,7 +119,7 @@ class BasicEnv(gym.Env):
                 if self.state['armies'][adj_r, adj_c] < 0:
                     self.state['total_land'][0]+=1
                     self.state['tiles'][adj_r, adj_c] = 0
-                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c]) -1
+                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
             elif self.state['tiles'][adj_r, adj_c] == -1: # moving to an empty tile
                 self.state['tiles'][adj_r, adj_c] = 0
                 self.state['total_land'][0]+=1
@@ -137,8 +137,9 @@ class BasicEnv(gym.Env):
         if self.state['turn'] % 25 == 0: # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
-                    if self.state['tiles'][row][col] >= 0:
+                    if self.state['tiles'][row][col] > -1:
                         self.state['armies'][row][col]+=1
+                        self.state['total_army'][self.state['tiles'][row][col]]+=1
         for (a, b) in self.state['cities']:
             if self.state['tiles'][a, b] > -1:
                 self.state['total_army'][self.state['tiles'][a, b]]+=1
