@@ -141,7 +141,7 @@ class MyFrame(wx.Frame):
                         else:
                             sign = 1 if start[0] < end[0] else -1
                             head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
-                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)
                             center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
                             dc.DrawLine(center_x,
                                         start[0] * TILE_SIZE + TILE_SIZE // 2
@@ -179,7 +179,7 @@ class MyFrame(wx.Frame):
 def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
-    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"queued_path": []}}
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False, "passed": False}, "scout": {"queued_path": [], "passed": False}}
     all_cities, all_generals = set(), set()
     won = False
 
@@ -303,30 +303,36 @@ def main(frame):
 
         elif mode == "cities":
             if len(mode_settings["cities"]["queued_path"]) < 2 or tiles[mode_settings["cities"]["queued_path"][0][0]][mode_settings["cities"]["queued_path"][0][1]] != our_flag:
-                closest_city = None
-                cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
+                if mode_settings["cities"]["passed"]:
+                    mode_settings["cities"]["passed"] = False
+                    closest_city = None
+                    cities.sort(key=lambda x: utils.nearest_city(x[0], x[1], general_r, general_c, tiles, cities))
 
-                for r, c in cities:
-                    if tiles[r][c] == -1:
-                        closest_city = (r, c)
-                        break
+                    for r, c in cities:
+                        if tiles[r][c] == -1:
+                            closest_city = (r, c)
+                            break
 
-                if closest_city is None:
-                    mode = "explore"
-                    mode_settings["cities"]["complete"] = True
-                    mode_settings["explore"]["complete"] = False
+                    if closest_city is None:
+                        mode = "explore"
+                        mode_settings["cities"]["complete"] = True
+                        mode_settings["explore"]["complete"] = False
+                        continue
+
+                    while len(mode_settings["cities"]["queued_path"]) < 2:
+                        unoccupied_cities = []
+                        for (r, c) in cities:
+                            if tiles[r][c] != our_flag and (r, c) != closest_city:  # TODO
+                                unoccupied_cities.append((r, c))
+
+                        state['cities'] = unoccupied_cities
+                        cities = unoccupied_cities
+
+                        mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
+                else:
+                    mode_settings["cities"]["passed"] = True
+                    time.sleep(0.25)
                     continue
-
-                while len(mode_settings["cities"]["queued_path"]) < 2:
-                    unoccupied_cities = []
-                    for (r, c) in cities:
-                        if tiles[r][c] != our_flag and (r, c) != closest_city:  # TODO
-                            unoccupied_cities.append((r, c))
-
-                    state['cities'] = unoccupied_cities
-                    cities = unoccupied_cities
-
-                    mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
 
             frame.info["queued_path"] = mode_settings["cities"]["queued_path"]
             a, b = mode_settings["cities"]["queued_path"].pop(0)
@@ -343,13 +349,29 @@ def main(frame):
                 mode = "consolidate"
                 continue
 
+            if len(mode_settings["scout"]["queued_path"]) <= 2:
+                if mode_settings["scout"]["passed"]:
+                    while len(mode_settings["scout"]["queued_path"]) < 2:
+                        mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
+                    print(main_army)
+                    print(f'New path: {mode_settings["scout"]["queued_path"]}')
+                    mode_settings["scout"]["passed"] = False
+                else:
+                    mode_settings["scout"]["passed"] = True
+                    time.sleep(0.25)
+                    continue
+
             if enemy_general is not None and (len(mode_settings["scout"]["queued_path"]) == 0 or mode_settings["scout"]["queued_path"][-1] != enemy_general):
-                mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state, enemy_general[0], enemy_general[1])
+                if mode_settings["scout"]["passed"]:
+                    mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state,
+                                                                            enemy_general[0], enemy_general[1])
+                    mode_settings["scout"]["passed"] = False
+                else:
+                    mode_settings["scout"]["passed"] = True
+                    time.sleep(0.25)
+                    continue
 
-            elif len(mode_settings["scout"]["queued_path"]) <= 1:
-                while len(mode_settings["scout"]["queued_path"]) < 2:
-                    mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
-
+            print(mode_settings["scout"]["passed"])
             frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
             a, b = mode_settings["scout"]["queued_path"].pop(0)
             c, d = mode_settings["scout"]["queued_path"][0]
@@ -368,11 +390,12 @@ def main(frame):
     else:
         frame.info["mode"] = "Defeat!"
     wx.CallAfter(frame.Refresh)
-    cnt=0
+    cnt = 0
     while True:
         time.sleep(1)
         print(cnt)
-        cnt+=1
+        cnt += 1
+
     wx.CallAfter(frame.Destroy)
 
 
