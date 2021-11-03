@@ -1,5 +1,5 @@
 import os
-from generals_client.generals import FOG,EMPTY,OBSTACLE,MOUNTAIN
+from generals import FOG,EMPTY,OBSTACLE,MOUNTAIN
 
 def clear():
     os.system('cls' if os.name=='nt' else 'clear')

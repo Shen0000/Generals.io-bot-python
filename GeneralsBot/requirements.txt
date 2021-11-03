@@ -1,2 +1,6 @@
+gymp
+numpy
+torch
+torchvision
 websocket-client
-requests
+wxpython
