@@ -10,6 +10,7 @@ import wx
 
 logging.basicConfig(level=logging.DEBUG)
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+ARROW_OFFSETS = {"shaft": [-0.25, 0.25], "head": [(-0.1, -0.1), (0.1, -0.1)]}
 PLAYER_COLORS = ['#ea3323', '#4a62d1']
 TILE_SIZE = 30
 
@@ -24,39 +25,49 @@ class MyFrame(wx.Frame):
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
         self.button = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (50, 50))
-        self.button.Bind(wx.EVT_BUTTON, self.onButton)
+        self.button.Bind(wx.EVT_BUTTON, self.onButtonForce)
+        self.buttons = [wx.Button(self.panel, speed, str(speed), (300, 50 + i * 50)) for i, speed in enumerate([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4])]
+        for button_el in self.buttons:
+            button_el.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+
         self.Centre()
         self.Show()
 
     def repaint(self, event):
         dc = wx.PaintDC(self.panel)
-        dc.DrawText(f"Mode: {self.info['mode']}", 600, 20)
+        dc.DrawText(f"Mode: {self.info['mode']}", 650, 20)
         if self.state is not None:
             if self.info['button']:
                 self.button.Destroy()
                 self.info['button'] = False
-            turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
-                self.state['turn'], self.state['tile_grid'], self.state['army_grid'], \
+                for button_el in self.buttons:
+                    button_el.Destroy()
+
+            tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
+                self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
                 self.state['alives'], self.state['armies'], self.state['lands'], \
                 self.state['all_cities'], self.state['all_generals']
 
             for i, username in enumerate(self.state["usernames"]):
-                dc.DrawText(f"{username}'s Army: {army_size[i]}", 600, 40 + i * 20)
-                dc.DrawText(f"{username}'s Land: {land_size[i]}", 800, 40 + i * 20)
+                dc.DrawText(f"{username}'s Army: {army_size[i]}", 100, 700 + i * 20)
+                dc.DrawText(f"{username}'s Land: {land_size[i]}", 400, 700 + i * 20)
 
             dc.SetPen(wx.Pen('#000000', width=1))
             for r in range(len(tiles)):
                 for c in range(len(tiles[0])):
-                    if tiles[r][c] in (-3, -4):
+                    if tiles[r][c] == -3:
                         dc.SetBrush(wx.Brush('#393939'))
-                    elif tiles[r][c] == -2:
-                        dc.SetBrush(wx.Brush('#bbbbbb'))
+                    elif tiles[r][c] in (-4, -2):
+                        dc.SetPen(wx.Pen('#000000', width=1))
+                        dc.SetBrush(wx.Brush('#bbbbbb' if tiles[r][c] == -2 else '#393939'))
                         dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                        mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
-                        for mountain in mountains:
-                            dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
-                                        mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
+
+                        if (r, c) not in all_cities:
+                            mountains = [(11, 8, 3, 24), (11, 8, 18, 22), (16, 18, 20, 12), (20, 12, 27, 24)]
+                            for mountain in mountains:
+                                dc.DrawLine(mountain[0] + c * TILE_SIZE, mountain[1] + r * TILE_SIZE,
+                                            mountain[2] + c * TILE_SIZE, mountain[3] + r * TILE_SIZE)
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                     elif tiles[r][c] == -1:
                         if (r, c) in cities:
@@ -67,13 +78,20 @@ class MyFrame(wx.Frame):
                         dc.SetBrush(wx.Brush(PLAYER_COLORS[tiles[r][c]]))
                     else:
                         dc.SetBrush(wx.Brush('#00c56c'))
+
+                    if tiles[r][c] <= -3:
+                        dc.SetPen(wx.Pen('#393939', width=1))
+                    else:
+                        dc.SetPen(wx.Pen('#000000', width=1))
                     dc.DrawRectangle(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE)
 
                     if (r, c) in all_generals:
                         dc.SetPen(wx.Pen('#000000', width=3))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
-                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2), int(TILE_SIZE * 0.4))
+                        dc.DrawCircle(c * TILE_SIZE + int(TILE_SIZE // 2), r * TILE_SIZE + int(TILE_SIZE // 2),
+                                      int(TILE_SIZE * 0.4))
                         dc.SetPen(wx.Pen('#000000', width=1))
+
                     if (r, c) in all_cities:
                         dc.SetPen(wx.Pen('#000000', width=2))
                         dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
@@ -97,18 +115,54 @@ class MyFrame(wx.Frame):
                                     TILE_SIZE * r + (TILE_SIZE - th) // 2)
 
                 if self.info["source"] != (-1, -1):
-                    dc.SetPen(wx.Pen('#ffffff', width=3))
+                    dc.SetPen(wx.Pen('#ffffff', width=2))
                     dc.SetBrush(wx.Brush("black", wx.TRANSPARENT))
                     dc.DrawRectangle(self.info["source"][1] * TILE_SIZE, self.info["source"][0] * TILE_SIZE, TILE_SIZE, TILE_SIZE)
                     dc.SetPen(wx.Pen('#000000', width=1))
+
+                if self.info["mode"] in ("consolidate", "cities", "scout"):
+                    dc.SetPen(wx.Pen('#ffffff', width=1))
+                    for i in range(len(self.info["queued_path"][:-1])):
+                        start = self.info["queued_path"][i]
+                        end = self.info["queued_path"][i + 1]
+                        assert start != end
+                        if start[0] == end[0]:
+                            sign = 1 if start[1] < end[1] else -1
+                            head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
+                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                            center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
+                            dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
+                                        center_y, head_x, center_y
+                            )
+                            for j in range(2):
+                                dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
+                                            center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                                )
+                        else:
+                            sign = 1 if start[0] < end[0] else -1
+                            head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
+                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                            center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
+                            dc.DrawLine(center_x,
+                                        start[0] * TILE_SIZE + TILE_SIZE // 2
+                                        + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
+                                        )
+                            for j in range(2):
+                                dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
+                                        head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
+                                )
+
+                    dc.SetPen(wx.Pen('#000000', width=1))
         else:
+            dc.DrawText("Speed: ", 320, 25)
             if general.force:
                 dc.DrawText("Forcing", 100, 100)
             else:
                 dc.DrawText("Not Forcing", 100, 100)
+
         self.Show(True)
 
-    def onButton(self, event):
+    def onButtonForce(self, event):
         if general.force:
             general.force_start(GAME_ID, False)
             general.force = False
@@ -116,15 +170,26 @@ class MyFrame(wx.Frame):
             general.force_start(GAME_ID, True)
             general.force = True
         self.Refresh()
+    
+    def onButtonSpeed(self, event):
+        btn = event.GetEventObject().GetLabel() 
+        general.set_game_speed(btn)
 
 
 def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
-    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"scout_target": None}}
+    mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False}, "scout": {"queued_path": []}}
     all_cities, all_generals = set(), set()
+    won = False
 
     for state in general.get_updates():
+        if state['complete']:
+            if state['result']:
+                won = True
+            else:
+                won = False
+        frame.state = state
         our_flag = state['player_index']
         try:
             general_r, general_c = state['generals'][our_flag]
@@ -173,6 +238,8 @@ def main(frame):
                     mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
+
+        frame.info["mode"] = mode
 
         if mode == "explore":
             pre = []
@@ -225,6 +292,7 @@ def main(frame):
                 while len(mode_settings["consolidate"]["queued_path"]) < 2:
                     mode_settings["consolidate"]["queued_path"] = utils.farthest4(general_r, general_c, state)
 
+            frame.info["queued_path"] = mode_settings["consolidate"]["queued_path"]
             a, b = mode_settings["consolidate"]["queued_path"].pop(0)
             c, d = mode_settings["consolidate"]["queued_path"][0]
             general.move(a, b, c, d)
@@ -260,6 +328,7 @@ def main(frame):
 
                     mode_settings["cities"]["queued_path"] = utils.farthest4(closest_city[0], closest_city[1], state)
 
+            frame.info["queued_path"] = mode_settings["cities"]["queued_path"]
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
             general.move(a, b, c, d)
@@ -270,43 +339,40 @@ def main(frame):
 
         elif mode == "scout":
             main_army = utils.find_main(tiles, armies, our_flag)  # update main army to account for server lag
-
             if armies[main_army[0]][main_army[1]] < 100:
                 mode = "consolidate"
-                main_army = (general_r, general_c)
+                continue
 
-            if mode_settings["scout"]["scout_target"] is None or mode_settings["scout"]["scout_target"] == main_army:
-                far = utils.farthest(our_flag, tiles, cities)
-                mode_settings["scout"]["scout_target"] = far
+            if enemy_general is not None and (len(mode_settings["scout"]["queued_path"]) == 0 or mode_settings["scout"]["queued_path"][-1] != enemy_general):
+                mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state, enemy_general[0], enemy_general[1])
 
-            if enemy_general is not None:
-                mode_settings["scout"]["scout_target"] = enemy_general
+            elif len(mode_settings["scout"]["queued_path"]) <= 1:
+                while len(mode_settings["scout"]["queued_path"]) < 2:
+                    mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
 
-            a, b = main_army
-            c, d = mode_settings["scout"]["scout_target"]
-
-            for offset in OFFSETS:
-                adj_r, adj_c = a + offset[0], b + offset[1]
-                if utils.in_bounds(adj_r, adj_c) and tiles[adj_r][adj_c] >= -1:
-                    moves.append((adj_r, adj_c, utils.manhattan_dist(adj_r, adj_c, c, d, state, attack=True)))
-
-            moves = sorted(moves, key=lambda x: x[2])
-
-            assert len(moves)
-            bm = moves[0]
-            general.move(a, b, bm[0], bm[1])
-            main_army = (bm[0], bm[1])
+            frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
+            a, b = mode_settings["scout"]["queued_path"].pop(0)
+            c, d = mode_settings["scout"]["queued_path"][0]
+            general.move(a, b, c, d)
 
         for flag in enemy_flags:
             if generals_list[flag] in all_generals and alive[flag]:
                 print(f"Enemy general found at: {generals_list[flag]}")
                 enemy_general = generals_list[flag]
 
-        frame.state = state
-        frame.info["mode"] = mode
         frame.info["source"] = (a, b)
         wx.CallAfter(frame.Refresh)
-
+    time.sleep(1)
+    if won:
+        frame.info["mode"] = "Victory!"
+    else:
+        frame.info["mode"] = "Defeat!"
+    wx.CallAfter(frame.Refresh)
+    cnt=0
+    while True:
+        time.sleep(1)
+        print(cnt)
+        cnt+=1
     wx.CallAfter(frame.Destroy)
 
 

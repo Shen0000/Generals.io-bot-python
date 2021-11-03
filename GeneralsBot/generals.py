@@ -12,6 +12,7 @@ EMPTY = -1
 MOUNTAIN = -2
 FOG = -3
 OBSTACLE = -4
+MAX_NUM_TEAMS = 12
 
 '''
 swamp locations are given at the beginning of the game as a single value.
@@ -21,7 +22,7 @@ The whole grid is represented as a line:
 '''
 
 _ENDPOINT = "wss://botws.generals.io/socket.io/?EIO=3&transport=websocket"
-_REPLAY_URL = "http://bot.generals.io/replays/"
+_REPLAY_URL = "https://bot.generals.io/replays/"
 _REPLAY_ID = ""
 
 _RESULTS = {
@@ -35,10 +36,10 @@ class Generals(object):
 
     # region is deprecated
     def __init__(self, userid, username, mode="1v1", gameid=None,
-                 force_start=True, region=None):
+                 force_start=True):
         self.force = force_start
         logging.debug("Creating connection")
-        self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs":ssl.CERT_NONE})
+        self._ws = create_connection(_ENDPOINT, sslopt={"cert_reqs": ssl.CERT_NONE})
         self._lock = threading.RLock()
 
         logging.debug("Starting heartbeat thread")
@@ -51,7 +52,9 @@ class Generals(object):
             if gameid is None:
                 raise ValueError("Gameid must be provided for private games")
             self._send(["join_private", gameid, userid])
-            print(f"Joined a custom game at link http://bot.generals.io/games/{gameid}")
+            print(f"Joined a custom game at link https://bot.generals.io/games/{gameid}")
+            time.sleep(0.2)
+            self._send(["set_custom_options", gameid, {"game_speed": 4}])
 
         elif mode == "1v1":
             self._send(["join_1v1", userid])
@@ -72,6 +75,8 @@ class Generals(object):
 
         self._seen_update = False
         self._move_id = 1
+        self._gameid = gameid
+        self._num_players = 2
         self._start_data = {}
         self._stars = []
         self._map = []
@@ -80,7 +85,7 @@ class Generals(object):
 
     def force_start(self, game_id="", force=True):
         self._send(["set_force_start", game_id, force])
-    
+
     def move(self, x1, y1, x2, y2, move_half=False):
         if not self._seen_update:
             raise ValueError("Cannot move before first map seen")
@@ -88,7 +93,6 @@ class Generals(object):
         cols = self._map[0]
         a = x1 * cols + y1
         b = x2 * cols + y2
-        # print(a, b)
         self._send(["attack", a, b, move_half, self._move_id])
         self._move_id += 1
 
@@ -116,13 +120,13 @@ class Generals(object):
 
             if msg[0] == "error_user_id":
                 raise ValueError("Already in game")
-            elif msg[0]== 'pre_game_start':
+            elif msg[0] == 'pre_game_start':
                 logging.info("Game Prepare to Start")
             elif msg[0] == "game_start":
                 logging.info("Game info: {}".format(msg[1]))
                 self._start_data = msg[1]
                 _REPLAY_ID = msg[1]['replay_id']
-                if STORE_REPLAY: #store the replay link in a separate file
+                if STORE_REPLAY:  # store the replay link in a separate file
                     print("Storing replay...")
                     with open("replays.txt", "a") as results:
                         results.write(_REPLAY_URL + _REPLAY_ID + '\n')
@@ -133,6 +137,7 @@ class Generals(object):
                 break
             elif msg[0] == "queue_update":
                 logging.info("queue update {}".format(msg[1]))
+                self._num_players = msg[1]['numPlayers']
             else:
                 logging.info("Unknown message type: {}".format(msg))
 
@@ -147,8 +152,8 @@ class Generals(object):
 
         rows, cols = self._map[1], self._map[0]
         self._seen_update = True
-        if self._swamps==[]:
-            self._swamps=[(c // cols, c % cols) for c in self._start_data['swamps']]
+        if not self._swamps:
+            self._swamps = [(c // cols, c % cols) for c in self._start_data['swamps']]
         # sort by player index
         scores = {d['i']: d for d in data['scores']}
         scores = [scores[i] for i in range(len(scores))]
@@ -197,6 +202,38 @@ class Generals(object):
                 break
             time.sleep(10)
 
+    def set_game_speed(self, speed="1"):
+	    speed = float(speed)
+	    self._send(["set_custom_options", self._gameid, {"game_speed":speed}])
+
+    def set_game_team(self, team="1"):
+	    team = int(team)
+	    if team in range(1, MAX_NUM_TEAMS+1):
+	    	self._send(["set_custom_team", self._gameid, team])
+
+    def set_game_public(self):
+	    self._send(["make_custom_public", self._gameid])
+
+    def set_game_map(self, mapname=""):
+	    if len(mapname) > 1:
+	    	self._send(["set_custom_options", self._gameid, {"map":mapname}])
+
+    def set_normal_map(self, width=-1, height=-1, city=-1, mountain=-1, swamp=-1):
+	    self._send(["set_custom_options", self._gameid, {"map":None}])
+	    if width >= 0 and width <=1:
+	    	self._send(["set_custom_options", self._gameid, {"width":width}])
+	    if height >= 0 and height <=1:
+	    	self._send(["set_custom_options", self._gameid, {"height":height}])
+	    if city >= 0 and city <=1:
+	    	self._send(["set_custom_options", self._gameid, {"city_density":city}])
+	    if mountain >= 0 and mountain <=1:
+	    	self._send(["set_custom_options", self._gameid, {"mountain_density":mountain}])
+	    if swamp >= 0 and swamp <=1:
+	    	self._send(["set_custom_options", self._gameid, {"swamp_density":swamp}])
+
+    def send_surrender(self):
+    	self._send(["surrender"])
+    
     def _get_stats(self):
         self._send(['stars_and_rank', USER_ID])
 
@@ -232,4 +269,3 @@ def _apply_diff(cache, diff):
         i += 1
 
     assert i == len(diff)
-
