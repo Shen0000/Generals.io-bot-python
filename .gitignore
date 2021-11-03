@@ -132,3 +132,5 @@ dmypy.json
 config.py
 replays.txt
 test.txt
+.idea
+.DS_Store
