@@ -26,7 +26,7 @@ class MyFrame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
-        self.image = wx.Image('GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
+        self.image = wx.Image('/Users/kevin_zhao/PycharmProjects/Bot2/GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
         self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
         self.buttonForce = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (640, 125))
         self.buttonForce.Bind(wx.EVT_BUTTON, self.onButtonForce)

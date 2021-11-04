@@ -11,6 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 env = gym.make("gym_basic:basic-v0")
 env.reset()
+env.step((1, 1, 1, 2))
 # tiles, armies, cities, generals = itemgetter('tiles', 'armies', 'cities', 'generals')(env.state)
 
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -28,14 +29,14 @@ class MyFrame(wx.Frame):
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
         self.image = wx.Image('/Users/kevin_zhao/PycharmProjects/Bot2/GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
-        self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
+        # self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
 
         self.Centre()
         self.Show()
 
     def repaint(self, event):
         dc = wx.PaintDC(self.panel)
-        dc.DrawText(f"Mode: {self.info['mode']}", 650, 20)
+        dc.DrawText(f"Mode: {self.info['mode']}", 900, 20)
         if self.state is not None:
             tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['tile_grid'], self.state['army_grid'], \
@@ -116,35 +117,38 @@ class MyFrame(wx.Frame):
 
                 if self.info["mode"] in ("consolidate", "cities", "scout"):
                     dc.SetPen(wx.Pen('#ffffff', width=1))
-                    for i in range(len(self.info["queued_path"][:-1])):
-                        start = self.info["queued_path"][i]
-                        end = self.info["queued_path"][i + 1]
-                        assert start != end
-                        if start[0] == end[0]:
-                            sign = 1 if start[1] < end[1] else -1
-                            head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
-                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
-                            center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
-                            dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
-                                        center_y, head_x, center_y
-                            )
-                            for j in range(2):
-                                dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
-                                            center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                    try:
+                        for i in range(len(self.info["queued_path"][:-1])):
+                            start = self.info["queued_path"][i]
+                            end = self.info["queued_path"][i + 1]
+                            assert start != end
+                            if start[0] == end[0]:
+                                sign = 1 if start[1] < end[1] else -1
+                                head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
+                                         + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                                center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
+                                dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
+                                            center_y, head_x, center_y
                                 )
-                        else:
-                            sign = 1 if start[0] < end[0] else -1
-                            head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
-                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)
-                            center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
-                            dc.DrawLine(center_x,
-                                        start[0] * TILE_SIZE + TILE_SIZE // 2
-                                        + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
-                                        )
-                            for j in range(2):
-                                dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
-                                        head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
-                                )
+                                for j in range(2):
+                                    dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
+                                                center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                                    )
+                            else:
+                                sign = 1 if start[0] < end[0] else -1
+                                head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
+                                         + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)
+                                center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
+                                dc.DrawLine(center_x,
+                                            start[0] * TILE_SIZE + TILE_SIZE // 2
+                                            + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
+                                            )
+                                for j in range(2):
+                                    dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
+                                            head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
+                                    )
+                    except:
+                        print("FAILING")
 
                     dc.SetPen(wx.Pen('#000000', width=1))
 
@@ -258,10 +262,10 @@ def main(frame):
                     moved = True
                     break
 
-            if not moved and turn % 2 == 0:
+            if not moved: #and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
-            for (r, c) in cities: # check so that we explore everything
+            for (r, c) in cities:  # check so that we explore everything
                 if tiles[r][c] < 0:
                     mode_settings["cities"]["complete"] = False
 
@@ -331,7 +335,6 @@ def main(frame):
                 if mode_settings["scout"]["passed"]:
                     while len(mode_settings["scout"]["queued_path"]) < 2:
                         mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
-                    print(main_army)
                     print(f'New path: {mode_settings["scout"]["queued_path"]}')
                     mode_settings["scout"]["passed"] = False
                 else:
@@ -349,7 +352,6 @@ def main(frame):
                     time.sleep(0.25)
                     continue
 
-            print(mode_settings["scout"]["passed"])
             frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
             a, b = mode_settings["scout"]["queued_path"].pop(0)
             c, d = mode_settings["scout"]["queued_path"][0]

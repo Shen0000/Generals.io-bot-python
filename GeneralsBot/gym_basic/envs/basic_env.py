@@ -6,7 +6,7 @@ import pathlib, sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
-from GeneralsBot.make_map import create_map
+from GeneralsBot.make_map import create_map, pad_map
 
 """
 Tile Embedding:
@@ -54,10 +54,11 @@ class BasicEnv(gym.Env):
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
         self.action_space = spaces.Discrete(self.SIZE**2 * 4)
-        self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1),
-                                            np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1))
+        self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=float),
+                                            np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=float))
 
-        tiles, cities, armies, generals = create_map([0.5, 0.5, 1, 0, 1, 2])
+        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
         self.state = {"tiles": tiles,
                       "armies": armies,
                       "cities": cities,
@@ -77,9 +78,8 @@ class BasicEnv(gym.Env):
         # print(offset, r, c)
         # adj_r, adj_c = r + offset[0], c + offset[1]
 
-        if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
-            self._update_states(r, c, adj_r, adj_c)
-            # print(self.state["armies"])
+        # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
+        self._update_states(r, c, adj_r, adj_c)
 
         time.sleep(0.05)
         return 0, 0, 0, 0  # obs, reward, done, info
@@ -119,7 +119,7 @@ class BasicEnv(gym.Env):
                     self.state['total_land'][0] += 1
                     self.state['tiles'][adj_r, adj_c] = 0
                     self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
-            elif self.state['tiles'][adj_r, adj_c] == -1: # moving to an empty tile
+            elif self.state['tiles'][adj_r, adj_c] == -1:  # moving to an empty tile
                 self.state['tiles'][adj_r, adj_c] = 0
                 self.state['total_land'][0] += 1
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
@@ -142,8 +142,6 @@ class BasicEnv(gym.Env):
             if self.state['tiles'][a, b] > -1:
                 self.state['total_army'][self.state['tiles'][a, b]] += 1
                 self.state['armies'][a, b] += 1
-
-        # raise NotImplementedError  # TODO
 
     def _state_to_obs(self):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
