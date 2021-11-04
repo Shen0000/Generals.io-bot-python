@@ -12,15 +12,16 @@ class Net(nn.Module):
         self.fc = nn.Linear(32 * 11 * 11 + 4, 3136)
 
     def forward(self, x):
-        # x is tuple of (observation, [turn, more, game, parameters])
+        # x is tuple of (observation, [[turn, more, game, parameters]])
         x, info = x
         x = self.pool(F.relu(self.conv1(x)))
         x = F.relu(self.conv2(x))
         x = torch.flatten(x, 1)  # flatten all dimensions except batch
-        x = torch.cat([x, torch.tensor(info).to(x.device).unsqueeze(0)], dim=1)
+        x = torch.cat([x, torch.tensor(info).to(x.device)], dim=1)
         x = self.fc(x)
         return x
 
+
 if __name__ == "__main__":
     net = Net()
-    net((torch.zeros(1, 10, 28, 28), [0, 0, 0, 0]))
+    net((torch.zeros((128, 10, 28, 28)), torch.zeros(128, 4)))
