@@ -1,21 +1,23 @@
+import gym
+from operator import itemgetter
 import logging
 import time
 import threading
-
-from wx.core import Height, Width
-
-from flood_fill import GeneralUtils
-from init_game import general
-from config import GAME_ID
 import wx
 
+from flood_fill import GeneralUtils
 
 logging.basicConfig(level=logging.DEBUG)
+
+env = gym.make("gym_basic:basic-v0")
+env.reset()
+env.step((1, 1, 1, 2))
+# tiles, armies, cities, generals = itemgetter('tiles', 'armies', 'cities', 'generals')(env.state)
+
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 ARROW_OFFSETS = {"shaft": [-0.25, 0.25], "head": [(-0.1, -0.1), (0.1, -0.1)]}
 PLAYER_COLORS = ['#ea3323', '#4363d8', '#027f00', '#008080', '#f58231', '#f032e6', '#800080', '#800001', '#b09f30', '#9a6324', '#0000ff', '#483d8a']
 TILE_SIZE = 30
-
 
 
 class MyFrame(wx.Frame):
@@ -27,27 +29,15 @@ class MyFrame(wx.Frame):
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
         self.image = wx.Image('/Users/kevin_zhao/PycharmProjects/Bot2/GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
-        self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
-        self.buttonForce = wx.Button(self.panel, wx.ID_ANY, "Toggle force start", (640, 125))
-        self.buttonForce.Bind(wx.EVT_BUTTON, self.onButtonForce)
-        self.buttons = [wx.Button(self.panel, speed, str(speed), (660, 275 + i * 50)) for i, speed in enumerate([0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4])]
-        for buttonSpeed in self.buttons:
-            buttonSpeed.Bind(wx.EVT_BUTTON, self.onButtonSpeed)
+        # self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
 
         self.Centre()
         self.Show()
 
     def repaint(self, event):
         dc = wx.PaintDC(self.panel)
-        dc.DrawText(f"Mode: {self.info['mode']}", 650, 20)
+        dc.DrawText(f"Mode: {self.info['mode']}", 900, 20)
         if self.state is not None:
-            if self.info['button']:
-                self.buttonForce.Destroy()
-                self.imageBitmap.Destroy()
-                self.info['button'] = False
-                for buttonSpeed in self.buttons:
-                    buttonSpeed.Destroy()
-
             tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
                 self.state['tile_grid'], self.state['army_grid'], \
                 self.state['cities'], self.state['swamps'], self.state['generals'], \
@@ -127,59 +117,42 @@ class MyFrame(wx.Frame):
 
                 if self.info["mode"] in ("consolidate", "cities", "scout"):
                     dc.SetPen(wx.Pen('#ffffff', width=1))
-                    for i in range(len(self.info["queued_path"][:-1])):
-                        start = self.info["queued_path"][i]
-                        end = self.info["queued_path"][i + 1]
-                        assert start != end
-                        if start[0] == end[0]:
-                            sign = 1 if start[1] < end[1] else -1
-                            head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
-                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
-                            center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
-                            dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
-                                        center_y, head_x, center_y
-                            )
-                            for j in range(2):
-                                dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
-                                            center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                    try:
+                        for i in range(len(self.info["queued_path"][:-1])):
+                            start = self.info["queued_path"][i]
+                            end = self.info["queued_path"][i + 1]
+                            assert start != end
+                            if start[0] == end[0]:
+                                sign = 1 if start[1] < end[1] else -1
+                                head_x = end[1] * TILE_SIZE + TILE_SIZE // 2 \
+                                         + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)  # TODO: factor out TILE_SIZE
+                                center_y = start[0] * TILE_SIZE + TILE_SIZE // 2
+                                dc.DrawLine(start[1] * TILE_SIZE + TILE_SIZE // 2 + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE),
+                                            center_y, head_x, center_y
                                 )
-                        else:
-                            sign = 1 if start[0] < end[0] else -1
-                            head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
-                                     + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)
-                            center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
-                            dc.DrawLine(center_x,
-                                        start[0] * TILE_SIZE + TILE_SIZE // 2
-                                        + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
-                                        )
-                            for j in range(2):
-                                dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
-                                        head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
-                                )
+                                for j in range(2):
+                                    dc.DrawLine(head_x + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE),
+                                                center_y + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE), head_x, center_y
+                                    )
+                            else:
+                                sign = 1 if start[0] < end[0] else -1
+                                head_y = end[0] * TILE_SIZE + TILE_SIZE // 2 \
+                                         + int((sign * ARROW_OFFSETS["shaft"][0]) * TILE_SIZE)
+                                center_x = start[1] * TILE_SIZE + TILE_SIZE // 2
+                                dc.DrawLine(center_x,
+                                            start[0] * TILE_SIZE + TILE_SIZE // 2
+                                            + sign * int((ARROW_OFFSETS["shaft"][1]) * TILE_SIZE), center_x, head_y
+                                            )
+                                for j in range(2):
+                                    dc.DrawLine(center_x + int(ARROW_OFFSETS["head"][j][0] * TILE_SIZE),
+                                            head_y + sign * int(ARROW_OFFSETS["head"][j][1] * TILE_SIZE), center_x, head_y
+                                    )
+                    except:
+                        print("FAILING")
 
                     dc.SetPen(wx.Pen('#000000', width=1))
-        else:
-            dc.DrawText("Control Panel", 660, 75)
-            dc.DrawText("Speed: ", 680, 250)
-            if general.force:
-                dc.DrawText("Forcing", 680, 175)
-            else:
-                dc.DrawText("Not Forcing", 665, 175)
 
         self.Show(True)
-
-    def onButtonForce(self, event):
-        if general.force:
-            general.force_start(GAME_ID, False)
-            general.force = False
-        else:
-            general.force_start(GAME_ID, True)
-            general.force = True
-        self.Refresh()
-    
-    def onButtonSpeed(self, event):
-        btn = event.GetEventObject().GetLabel() 
-        general.set_game_speed(btn)
 
 
 def main(frame):
@@ -188,14 +161,17 @@ def main(frame):
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False, "passed": False}, "scout": {"queued_path": [], "passed": False}}
     all_cities, all_generals = set(), set()
     won = False
+    env.step((0, 0, 0, 0))
+    tiles, armies, cities, generals, land, army, turn = \
+        itemgetter('tiles', 'armies', 'cities', 'generals', 'total_land', 'total_army', 'turn')(env.state)
+    generals[1] = (-1, -1)
+    state = {"tile_grid": tiles, "army_grid": armies, "cities": cities, "generals": generals, "lands": land, "turn": turn,
+             "armies": army, "swamps": [], "all_cities": all_cities, "all_generals": all_generals, "alives": [True, True],
+             "player_index": 0, "usernames": ["test", "test"]
+            }
 
-    for state in general.get_updates():
-        if state['complete']:
-            if state['result']:
-                won = True
-            else:
-                won = False
-        our_flag = state['player_index']
+    while True:
+        our_flag = 0
         try:
             general_r, general_c = state['generals'][our_flag]
             if main_army is None:  # Should only run on initial update
@@ -203,8 +179,8 @@ def main(frame):
                 mode_settings["consolidate"]["curr_tile"] = main_army
         except KeyError:
             break
-        rows = state['rows']
-        cols = state['cols']
+        rows = env.SIZE
+        cols = env.SIZE
         utils = GeneralUtils(rows, cols)
 
         turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
@@ -217,6 +193,7 @@ def main(frame):
             all_cities.add((r, c))
             if tiles[r][c] != our_flag:
                 unoccupied_cities.append((r, c))
+
         state['all_cities'] = all_cities
         state['cities'] = unoccupied_cities
         cities = unoccupied_cities
@@ -265,7 +242,6 @@ def main(frame):
                     empty.append((r, c, a, b, d,
                                   utils.manhattan_dist(r, c, general_r, general_c, state))
                                  )
-
             moved = False
             empty = sorted(empty, key=lambda x: (x[4], x[5]))
             for i in range(len(empty)):
@@ -282,14 +258,14 @@ def main(frame):
                 moves = sorted(moves, key=lambda x: x[2])
                 if len(moves):
                     bm = moves[0]
-                    general.move(a, b, bm[0], bm[1])
+                    env.step((a, b, bm[0], bm[1]))
                     moved = True
                     break
 
-            if not moved and turn % 2 == 0:
+            if not moved: #and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
-            for (r, c) in cities: # check so that we explore everything
+            for (r, c) in cities:  # check so that we explore everything
                 if tiles[r][c] < 0:
                     mode_settings["cities"]["complete"] = False
 
@@ -301,7 +277,7 @@ def main(frame):
             frame.info["queued_path"] = mode_settings["consolidate"]["queued_path"]
             a, b = mode_settings["consolidate"]["queued_path"].pop(0)
             c, d = mode_settings["consolidate"]["queued_path"][0]
-            general.move(a, b, c, d)
+            env.step((a, b, c, d))
 
             if armies[general_r][general_c] > 300 and state["armies"][1 - our_flag] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
@@ -343,7 +319,7 @@ def main(frame):
             frame.info["queued_path"] = mode_settings["cities"]["queued_path"]
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
-            general.move(a, b, c, d)
+            env.step((a, b, c, d))
 
             if armies[general_r][general_c] > 300 and state["armies"][enemy_flags[0]] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
@@ -359,7 +335,6 @@ def main(frame):
                 if mode_settings["scout"]["passed"]:
                     while len(mode_settings["scout"]["queued_path"]) < 2:
                         mode_settings["scout"]["queued_path"] = utils.farthest5(main_army[0], main_army[1], state)
-                    print(main_army)
                     print(f'New path: {mode_settings["scout"]["queued_path"]}')
                     mode_settings["scout"]["passed"] = False
                 else:
@@ -377,11 +352,10 @@ def main(frame):
                     time.sleep(0.25)
                     continue
 
-            print(mode_settings["scout"]["passed"])
             frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
             a, b = mode_settings["scout"]["queued_path"].pop(0)
             c, d = mode_settings["scout"]["queued_path"][0]
-            general.move(a, b, c, d)
+            env.step((a, b, c, d))
 
         for flag in enemy_flags:
             if generals_list[flag] in all_generals and alive[flag]:
