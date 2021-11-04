@@ -207,7 +207,7 @@ class BasicEnv(gym.Env):
         self.state = state
 
     def get_obs(self):
-        return self._state_to_obs(self.state)
+        return self._state_to_obs()
 
     def reset(self):
         pass
