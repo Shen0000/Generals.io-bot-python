@@ -108,7 +108,7 @@ def valid(grid, generalloc):
         for j in range(i + 1, n):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
-            if dist <= 25:
+            if dist <= 18:
                 return False
 
     if frac < .90:
