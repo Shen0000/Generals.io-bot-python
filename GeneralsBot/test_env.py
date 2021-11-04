@@ -208,14 +208,14 @@ def main(frame):
 
         enemy_flags.sort(key=lambda x: armies[x])
 
-        # if mode not in ("scout", "cities"):
-        #     if mode_settings["explore"]["complete"] and mode == "explore":
-        #         if mode_settings["cities"]["complete"]:
-        #             mode = "consolidate"
-        #         else:
-        #             mode = "cities"
-        #     elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
-        mode = "explore"
+        if mode not in ("scout", "cities"):
+            if mode_settings["explore"]["complete"] and mode == "explore":
+                if mode_settings["cities"]["complete"]:
+                    mode = "consolidate"
+                else:
+                    mode = "cities"
+            elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
+                mode = "explore"
         
         frame.state = state
         frame.info["mode"] = mode

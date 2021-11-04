@@ -81,7 +81,7 @@ class BasicEnv(gym.Env):
             self._update_states(r, c, adj_r, adj_c)
             # print(self.state["armies"])
 
-        time.sleep(0.25)
+        time.sleep(0.05)
         return 0, 0, 0, 0  # obs, reward, done, info
 
     def _update_states(self, r, c, adj_r, adj_c):
