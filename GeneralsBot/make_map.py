@@ -19,8 +19,8 @@ generals = [(), (-1, -1)]
 '''
 
 
-def flood(grid, flag):
-    components = []
+def flood(grid, flag, generalloc):
+    components, map = [], []
     vis = [[False for _ in range(len(grid[0]))] for __ in range(len(grid))]
     for r in range(len(grid)):
         for c in range(len(grid[0])):
@@ -35,6 +35,10 @@ def flood(grid, flag):
                         continue
                     if vis[a][b] or grid[a][b] != flag:
                         continue
+                    for gl in generalloc:
+                        if (gl[0], gl[1]) == (a, b):
+                            map.append(len(components))
+
                     vis[a][b] = True
                     size+=1
                     queue.append((a+1, b))
@@ -42,12 +46,12 @@ def flood(grid, flag):
                     queue.append((a, b+1))
                     queue.append((a, b-1))
                 components.append(size)
-    return components
+    return components, map
 
 
 def create_map(data):
     length, width, city_density, swamp_density, mountain_density, num_players = data
-    assert num_players > 1 
+    assert num_players > 1, "can't play with only one player"
     grid, armies, cities, generalloc = [], [], [], []
     rows, cols = 0, 0
     rows = MIN + int(MIN*length) + random.randint(-2, 2)
@@ -94,8 +98,20 @@ def create_map(data):
 
 
 def valid(grid, generalloc):
-    components = flood(grid, -1)
+    components, map = flood(grid, -1, generalloc)
+    # print(map, generalloc)
+    assert len(map) == len(generalloc), "not all general locations were found while flood filling"
     components.sort(reverse=True)
+    num = -1
+    valid = True
+    for loc in map:
+        if num == -1:
+            num = loc
+        elif loc != num:
+            valid = False
+    if not valid:
+        print("Generals are not in the same component, remaking map")
+        return False
     empty_tiles = 0
     for component in components:
         empty_tiles += component
@@ -108,7 +124,8 @@ def valid(grid, generalloc):
         for j in range(i + 1, n):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
-            if dist <= 18:
+            if dist <= 10:
+                print("distance invalid, remaking map")
                 return False
 
     if frac < .90:
@@ -156,6 +173,7 @@ if __name__ == "__main__":
     num_players = 2
     data = [length, width, city_density, swamp_density, mountain_density, num_players]
     grid, cities, armies, generalslocations = create_map(data)
+    # print(grid, cities, armies, generalslocations)
 
 '''
 Testing:
