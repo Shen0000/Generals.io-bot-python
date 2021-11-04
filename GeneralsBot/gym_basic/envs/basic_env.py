@@ -76,7 +76,6 @@ class BasicEnv(gym.Env):
         offset = OFFSETS[action % 4]
         tile = action // 4
         r, c = tile // self.SIZE, tile % self.SIZE
-        print(offset, r, c)
         adj_r, adj_c = r + offset[0], c + offset[1]
 
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
