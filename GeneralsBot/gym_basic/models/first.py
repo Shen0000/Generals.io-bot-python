@@ -16,8 +16,8 @@ class Net(nn.Module):
         x, info = x
         x = self.pool(F.relu(self.conv1(x)))
         x = F.relu(self.conv2(x))
-        x = torch.flatten(x, 1) # flatten all dimensions except batch
-        x = torch.cat([x, torch.tensor(info).to(x.device)], dim=0)
+        x = torch.flatten(x, 1)  # flatten all dimensions except batch
+        x = torch.cat([x, torch.tensor(info).to(x.device).unsqueeze(1)], dim=0)
         x = self.fc(x)
         return x
 
