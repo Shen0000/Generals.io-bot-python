@@ -70,19 +70,20 @@ class BasicEnv(gym.Env):
         # self._state_to_obs()
 
     def step(self, action):
-        (r, c, adj_r, adj_c) = action
-        # assert self.action_space.contains(action)
-        # offset = OFFSETS[action % 4]
-        # tile = action // 4
-        # r, c = tile // self.SIZE, tile % self.SIZE
-        # print(offset, r, c)
-        # adj_r, adj_c = r + offset[0], c + offset[1]
+        # (r, c, adj_r, adj_c) = action
+        assert self.action_space.contains(action)
+        offset = OFFSETS[action % 4]
+        tile = action // 4
+        r, c = tile // self.SIZE, tile % self.SIZE
+        print(offset, r, c)
+        adj_r, adj_c = r + offset[0], c + offset[1]
 
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
+        prev_land = self.state["total_land"][0]
         self._update_states(r, c, adj_r, adj_c)
-
-        time.sleep(0.05)
-        return 0, 0, 0, 0  # obs, reward, done, info
+        obs = self._state_to_obs()
+        # time.sleep(0.05)
+        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > 25, None  # obs, reward, done, info
 
     def _update_states(self, r, c, adj_r, adj_c):
         """
@@ -204,6 +205,9 @@ class BasicEnv(gym.Env):
 
     def update_state(self, state):
         self.state = state
+
+    def get_obs(self):
+        return self._state_to_obs(self.state)
 
     def reset(self):
         pass

@@ -19,4 +19,4 @@ class Net(nn.Module):
         return x
 
 
-net = Net()
+# net = Net()

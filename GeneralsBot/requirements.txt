@@ -1,4 +1,4 @@
-gymp
+gym
 numpy
 torch
 torchvision
