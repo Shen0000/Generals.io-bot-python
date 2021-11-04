@@ -3,6 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 import numpy as np
 import pathlib, sys
+import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 from GeneralsBot.make_map import create_map
@@ -65,19 +66,23 @@ class BasicEnv(gym.Env):
                       "total_army": [0, 0],
                       "generals": generals,  # TODO: generals, cities, tiles, armies should be generated
                       }
-        self._state_to_obs()
+        # self._state_to_obs()
 
     def step(self, action):
-        assert self.action_space.contains(action)
-        offset = OFFSETS[action % 4]
-        tile = action // 4
-        r, c = tile // self.SIZE, tile % self.SIZE
-        adj_r, adj_c = r + offset[0], c + offset[1]
+        (r, c, adj_r, adj_c) = action
+        # assert self.action_space.contains(action)
+        # offset = OFFSETS[action % 4]
+        # tile = action // 4
+        # r, c = tile // self.SIZE, tile % self.SIZE
+        # print(offset, r, c)
+        # adj_r, adj_c = r + offset[0], c + offset[1]
 
         if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
             self._update_states(r, c, adj_r, adj_c)
+            # print(self.state["armies"])
 
-        return 0  # reward, done, info
+        time.sleep(0.25)
+        return 0, 0, 0, 0  # obs, reward, done, info
 
     def _update_states(self, r, c, adj_r, adj_c):
         """
@@ -138,7 +143,7 @@ class BasicEnv(gym.Env):
                 self.state['total_army'][self.state['tiles'][a, b]] += 1
                 self.state['armies'][a, b] += 1
 
-        raise NotImplementedError  # TODO
+        # raise NotImplementedError  # TODO
 
     def _state_to_obs(self):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
@@ -199,12 +204,11 @@ class BasicEnv(gym.Env):
 
         return np.array(visited)
 
-    def get_states(self):
-        return self.state
+    def update_state(self, state):
+        self.state = state
 
     def reset(self):
-        state = 0
-        return state
+        pass
 
     def render(self, mode='human'):
         pass
