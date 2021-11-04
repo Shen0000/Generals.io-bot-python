@@ -136,4 +136,9 @@ replays.txt
 .idea
 =======
 test.txt
+<<<<<<< HEAD
+.idea
+.DS_Store
+=======
 >>>>>>> fed66c82d222ca7f3afd57c1fc4c52bba2011765
+>>>>>>> 1236e5e5365240fc50592ca04fea6c3d69bf2a5d
