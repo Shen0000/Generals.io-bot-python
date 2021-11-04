@@ -98,6 +98,9 @@ def create_map(data):
     print(cities)
     '''
     if valid(grid, generalloc):
+        gen_r, gen_c = generalloc[0]
+        grid[gen_r][gen_c] = 0
+        armies[gen_r][gen_c] = 1
         return np.array(grid), cities, np.array(armies), generalloc
     else:
         return create_map(data)

@@ -44,6 +44,7 @@ def valid_move(r, c, r2, c2):
             return True
     return False
 
+
 class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -92,52 +93,50 @@ class BasicEnv(gym.Env):
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
         if valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1:
-            if self.state['tiles'][adj_r, adj_c] == 0: # moving to own tile
+            if self.state['tiles'][adj_r, adj_c] == 0:  # moving to own tile
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
-            elif self.state['tiles'][adj_r, adj_c] == 1: # moving onto enemy tile
-                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1) # update total army for both players
+            elif self.state['tiles'][adj_r, adj_c] == 1:  # moving onto enemy tile
+                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1)  # update total army for both players
                 self.state['total_army'][1] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1)
                 self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
                 if self.state['armies'][adj_r, adj_c] < 0:
-                    self.state['total_land'][0]+=1
-                    self.state['total_land'][1]-=1
+                    self.state['total_land'][0] += 1
+                    self.state['total_land'][1] -= 1
                     self.state['tiles'][adj_r, adj_c] = 0
-                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
-            elif (adj_r, adj_c) in self.state['cities']: # moving to a neutral city tile
-                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1) # update total army after using troops to capture city
+                    self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])  # TODO: always < 0
+            elif (adj_r, adj_c) in self.state['cities']:  # moving to a neutral city tile
+                self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1)  # update total army after using troops to capture city
                 self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
                 if self.state['armies'][adj_r, adj_c] < 0:
-                    self.state['total_land'][0]+=1
+                    self.state['total_land'][0] += 1
                     self.state['tiles'][adj_r, adj_c] = 0
                     self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
             elif self.state['tiles'][adj_r, adj_c] == -1: # moving to an empty tile
                 self.state['tiles'][adj_r, adj_c] = 0
-                self.state['total_land'][0]+=1
+                self.state['total_land'][0] += 1
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
-            
 
-
-        self.state['turn']+=1
+        # Increment turn and armies
+        self.state['turn'] += 1
         g1, g2 = self.state['generals']
-        self.state["total_army"][0]+=1
-        self.state["total_army"][1]+=1
-        self.state['armies'][g1[0], g1[1]]+=1
-        self.state['armies'][g2[0], g2[1]]+=1
+        self.state["total_army"][0] += 1
+        self.state["total_army"][1] += 1
+        self.state['armies'][g1[0], g1[1]] += 1
+        self.state['armies'][g2[0], g2[1]] += 1
         if self.state['turn'] % 25 == 0: # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
                     if self.state['tiles'][row][col] > -1:
                         self.state['armies'][row][col]+=1
-                        self.state['total_army'][self.state['tiles'][row][col]]+=1
+                        self.state['total_army'][self.state['tiles'][row][col]] += 1
         for (a, b) in self.state['cities']:
             if self.state['tiles'][a, b] > -1:
-                self.state['total_army'][self.state['tiles'][a, b]]+=1
-                self.state['armies'][a, b]+=1
-        
+                self.state['total_army'][self.state['tiles'][a, b]] += 1
+                self.state['armies'][a, b] += 1
 
         raise NotImplementedError  # TODO
 
@@ -152,15 +151,53 @@ class BasicEnv(gym.Env):
         for gen_r, gen_c in self.state["cities"]:
             general_indicators[gen_r][gen_c] = 1
 
-        obstacle_indicators = self.state["tiles"] == -4
-        fog_indicators = self.state["tiles"] <= -3
+        visible_indicators = self._calc_visible()
+        fog_indicators = np.invert(visible_indicators)
         mountain_indicators = self.state["tiles"] == -2
         empty_indicators = self.state["tiles"] == -1
-        return np.stack([
-            ownership, self.state["armies"], ownership * self.state["armies"],
+        obstacle_indicators = (city_indicators + mountain_indicators) * fog_indicators
+        ownership *= fog_indicators
+        city_indicators *= visible_indicators
+        general_indicators *= visible_indicators
+        empty_indicators *= visible_indicators
+        mountain_indicators *= visible_indicators
+        out = np.stack([
+            ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
             city_indicators, ownership * city_indicators, obstacle_indicators,
             fog_indicators, mountain_indicators, empty_indicators, general_indicators
         ])
+        return out
+
+    def _calc_visible(self):  # aka farthest6
+        visited = [[False for _ in range(self.SIZE)] for _ in range(self.SIZE)]
+        queue = []
+        fringe = []
+        for row in range(self.SIZE):
+            for col in range(self.SIZE):
+                if self.state["tiles"][row][col] == 0:
+                    queue.append((row, col))
+
+        while len(queue) > 0 or len(fringe) > 0:
+            a, b = queue.pop(0) if len(queue) > 0 else fringe.pop(0)
+            if visited[a][b]:
+                continue
+
+            visited[a][b] = True
+
+            if self.state["tiles"][a][b] != 0:
+                continue
+
+            if len(queue) == 0 and len(fringe) != 0:
+                continue
+
+            for dr in range(-1, 2):
+                for dc in range(-1, 2):
+                    if (dr, dc) == (0, 0):
+                        continue
+                    if self.in_bounds(a + dr, b + dc) and not visited[a + dr][b + dc]:
+                        fringe.append((a + dr, b + dc))
+
+        return np.array(visited)
 
     def get_states(self):
         return self.state
@@ -176,7 +213,7 @@ class BasicEnv(gym.Env):
         pass
 
     def in_bounds(self, r=0, c=0):
-        return 0 <= r < self.EMBED_SIZE and 0 <= c < self.EMBED_SIZE
+        return 0 <= r < self.SIZE and 0 <= c < self.SIZE
 
 
 if __name__ == "__main__":
