@@ -73,19 +73,15 @@ class BasicEnv(gym.Env):
     def step(self, action):
         # (r, c, adj_r, adj_c) = action
         assert self.action_space.contains(action)
-        offset = OFFSETS[action % 4]
-        tile = action // 4
-        r, c = tile // self.SIZE, tile % self.SIZE
-        adj_r, adj_c = r + offset[0], c + offset[1]
 
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
         prev_land = self.state["total_land"][0]
-        self._update_states(r, c, adj_r, adj_c)
+        self._update_states(action)
         obs = self._state_to_obs()
         # time.sleep(0.05)
         return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > 25, None  # obs, reward, done, info
 
-    def _update_states(self, r, c, adj_r, adj_c):
+    def _update_states(self, action):
         """
         Increment turn by 1
         Increment occupied cities by 1
@@ -98,7 +94,11 @@ class BasicEnv(gym.Env):
         Ideally also figure out how the action itself will work,
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
-        if valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.in_bounds(adj_r, adj_c):
+        if self.is_valid_move(action):
+            offset = OFFSETS[action % 4]
+            tile = action // 4
+            r, c = tile // self.SIZE, tile % self.SIZE
+            adj_r, adj_c = r + offset[0], c + offset[1]
             if self.state['tiles'][adj_r, adj_c] == 0:  # moving to own tile
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
@@ -143,6 +143,14 @@ class BasicEnv(gym.Env):
             if self.state['tiles'][a, b] > -1:
                 self.state['total_army'][self.state['tiles'][a, b]] += 1
                 self.state['armies'][a, b] += 1
+
+    def is_valid_move(self, action):
+        assert self.action_space.contains(action)
+        offset = OFFSETS[action % 4]
+        tile = action // 4
+        r, c = tile // self.SIZE, tile % self.SIZE
+        adj_r, adj_c = r + offset[0], c + offset[1]
+        return valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.in_bounds(adj_r, adj_c)
 
     def _state_to_obs(self, device="cpu"):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
