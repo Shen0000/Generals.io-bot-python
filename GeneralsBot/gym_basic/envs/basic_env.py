@@ -4,7 +4,6 @@ from gym.utils import seeding
 import numpy as np
 import pathlib, sys
 import time
-import torch
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 from GeneralsBot.make_map import create_map, pad_map
@@ -71,19 +70,19 @@ class BasicEnv(gym.Env):
         # self._state_to_obs()
 
     def step(self, action):
-        # (r, c, adj_r, adj_c) = action
-        assert self.action_space.contains(action)
-        offset = OFFSETS[action % 4]
-        tile = action // 4
-        r, c = tile // self.SIZE, tile % self.SIZE
-        adj_r, adj_c = r + offset[0], c + offset[1]
+        (r, c, adj_r, adj_c) = action
+        # assert self.action_space.contains(action)
+        # offset = OFFSETS[action % 4]
+        # tile = action // 4
+        # r, c = tile // self.SIZE, tile % self.SIZE
+        # print(offset, r, c)
+        # adj_r, adj_c = r + offset[0], c + offset[1]
 
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
-        prev_land = self.state["total_land"][0]
         self._update_states(r, c, adj_r, adj_c)
-        obs = self._state_to_obs()
-        # time.sleep(0.05)
-        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > 25, None  # obs, reward, done, info
+
+        time.sleep(0.05)
+        return 0, 0, 0, 0  # obs, reward, done, info
 
     def _update_states(self, r, c, adj_r, adj_c):
         """
@@ -113,6 +112,7 @@ class BasicEnv(gym.Env):
                     self.state['tiles'][adj_r, adj_c] = 0
                     self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])  # TODO: always < 0
             elif (adj_r, adj_c) in self.state['cities']:  # moving to a neutral city tile
+                print("herhehrehre")
                 self.state['total_army'][0] -= min(self.state['armies'][adj_r, adj_c], self.state['armies'][r, c]-1)  # update total army after using troops to capture city
                 self.state['armies'][adj_r, adj_c] -= self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
@@ -120,7 +120,7 @@ class BasicEnv(gym.Env):
                     self.state['total_land'][0] += 1
                     self.state['tiles'][adj_r, adj_c] = 0
                     self.state['armies'][adj_r, adj_c] = abs(self.state['armies'][adj_r, adj_c])
-            elif self.state['tiles'][adj_r, adj_c] == -1:  # moving to an empty tile
+            elif self.state['tiles'][adj_r, adj_c] == -1: # moving to an empty tile
                 self.state['tiles'][adj_r, adj_c] = 0
                 self.state['total_land'][0] += 1
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
@@ -144,7 +144,7 @@ class BasicEnv(gym.Env):
                 self.state['total_army'][self.state['tiles'][a, b]] += 1
                 self.state['armies'][a, b] += 1
 
-    def _state_to_obs(self, device="cpu"):
+    def _state_to_obs(self):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
         ownership = _tile_to_owner(self.state["tiles"])
         city_indicators = np.zeros(self.GRID_DIM, dtype=bool)
@@ -165,13 +165,12 @@ class BasicEnv(gym.Env):
         general_indicators *= visible_indicators
         empty_indicators *= visible_indicators
         mountain_indicators *= visible_indicators
-        np_out = np.stack([
+        out = np.stack([
             ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
             city_indicators, ownership * city_indicators, obstacle_indicators,
             fog_indicators, mountain_indicators, empty_indicators, general_indicators
         ])
-
-        return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0, 0]  # TODO: add more features
+        return out
 
     def _calc_visible(self):  # aka farthest6
         visited = [[False for _ in range(self.SIZE)] for _ in range(self.SIZE)]
@@ -206,9 +205,6 @@ class BasicEnv(gym.Env):
 
     def update_state(self, state):
         self.state = state
-
-    def get_obs(self):
-        return self._state_to_obs()
 
     def reset(self):
         pass
