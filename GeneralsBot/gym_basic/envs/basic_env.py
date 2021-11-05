@@ -98,7 +98,7 @@ class BasicEnv(gym.Env):
         Ideally also figure out how the action itself will work,
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
-        if valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1:
+        if valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.in_bounds(adj_r, adj_c):
             if self.state['tiles'][adj_r, adj_c] == 0:  # moving to own tile
                 self.state['armies'][adj_r, adj_c] += self.state['armies'][r, c] - 1
                 self.state['armies'][r, c] = 1
