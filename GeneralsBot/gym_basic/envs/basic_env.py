@@ -227,7 +227,16 @@ class BasicEnv(gym.Env):
         return self._state_to_obs()
 
     def reset(self):
-        pass
+        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
+        self.state = {"tiles": tiles,
+                      "armies": armies,
+                      "cities": cities,
+                      "turn": 0,
+                      "total_land": [0, 0],
+                      "total_army": [0, 0],
+                      "generals": generals,  # TODO: generals, cities, tiles, armies should be generated
+                      }
 
     def render(self, mode='human'):
         pass
