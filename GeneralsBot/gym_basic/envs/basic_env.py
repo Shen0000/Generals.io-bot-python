@@ -152,6 +152,13 @@ class BasicEnv(gym.Env):
         adj_r, adj_c = r + offset[0], c + offset[1]
         return valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.in_bounds(adj_r, adj_c)
 
+    def is_good_move(self, action):
+        offset = OFFSETS[action % 4]
+        tile = action // 4
+        r, c = tile // self.SIZE, tile % self.SIZE
+        adj_r, adj_c = r + offset[0], c + offset[1]
+        return self.is_valid_move(action) and self.state['tiles'][r][c] == 0 and self.state['tiles'][adj_r][adj_c] in (-1, 0)
+
     def _state_to_obs(self, device="cpu"):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
         ownership = _tile_to_owner(self.state["tiles"])
