@@ -157,7 +157,8 @@ class BasicEnv(gym.Env):
         tile = action // 4
         r, c = tile // self.SIZE, tile % self.SIZE
         adj_r, adj_c = r + offset[0], c + offset[1]
-        return self.is_valid_move(action) and self.state['tiles'][r][c] == 0 and self.state['tiles'][adj_r][adj_c] in (-1, 0)
+        return self.is_valid_move(action) and self.state['tiles'][r][c] == 0 and \
+               self.state['tiles'][adj_r][adj_c] == -1 and self.state['armies'][r][c] > 1
 
     def _state_to_obs(self, device="cpu"):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
