@@ -153,6 +153,21 @@ class BasicEnv(gym.Env):
             if tiles[a, b] > -1:
                 tot_army[tiles[a, b]] += 1
                 armies[a, b] += 1
+        
+        #update actual variables
+
+        self.state['armies'][r, c] = curr_army
+        self.state['armies'][adj_r, adj_c] = adj_army
+        self.state['tiles'][adj_r, adj_c] = adj_tile
+        self.state['total_army'][0] = our_army
+        self.state['total_army'][1] = enemy_army
+        self.state['total_land'][0] = our_land
+        self.state['total_land'][1] = enemy_land
+        self.state['cities'] = cities
+
+        self.state['turn'] = turn
+        self.state['generals'] = [g1, g2]
+        self.state['armies'], self.state['tiles'], self.state['total_army'] = armies, tiles, tot_army
 
     def _state_to_obs(self):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
