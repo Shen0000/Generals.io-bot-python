@@ -1,6 +1,7 @@
 import gym
 from operator import itemgetter
 import logging
+import numpy as np
 import time
 import threading
 import wx
@@ -28,7 +29,7 @@ class MyFrame(wx.Frame):
         self.panel.Bind(wx.EVT_PAINT, self.repaint)
         self.state = None
         self.info = {"mode": "Starting", "source": (-1, -1), "button": True}
-        self.image = wx.Image('/Users/kevin_zhao/PycharmProjects/Bot2/GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
+        # self.image = wx.Image('/Users/kevin_zhao/PycharmProjects/Bot2/GeneralsBot/assets/pictures/logo.png', wx.BITMAP_TYPE_ANY)
         # self.imageBitmap = wx.StaticBitmap(self.panel, wx.ID_ANY, wx.BitmapFromImage(self.image))
 
         self.Centre()
@@ -165,6 +166,8 @@ def main(frame):
     tiles, armies, cities, generals, land, army, turn = \
         itemgetter('tiles', 'armies', 'cities', 'generals', 'total_land', 'total_army', 'turn')(env.state)
     generals[1] = (-1, -1)
+
+
     state = {"tile_grid": tiles, "army_grid": armies, "cities": cities, "generals": generals, "lands": land, "turn": turn,
              "armies": army, "swamps": [], "all_cities": all_cities, "all_generals": all_generals, "alives": [True, True],
              "player_index": 0, "usernames": ["test", "test"]
@@ -183,9 +186,14 @@ def main(frame):
         cols = env.SIZE
         utils = GeneralUtils(rows, cols)
 
-        turn, tiles, armies, cities, swamps, generals_list, alive, army_size, land_size = \
-            state['turn'], state['tile_grid'], state['army_grid'], state['cities'], state['swamps'], \
-            state['generals'], state['alives'], state['armies'], state['lands']
+        print(state)
+        print("-----")
+        print(env.state)
+        masked_state = env.get_masked_state()
+        turn, tiles, armies, cities, generals_list, army_size, land_size = \
+            masked_state['turn'], masked_state['tiles'], masked_state['armies'], masked_state['cities'], \
+            masked_state['generals'], masked_state['total_army'], masked_state['total_land']
+        alive = [True] * 2
 
         moves = []
         unoccupied_cities = []
@@ -217,6 +225,8 @@ def main(frame):
                 if mode_settings["cities"]["complete"]:
                     mode = "consolidate"
                 else:
+                    print("here111")
+                    # assert False
                     mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
@@ -225,6 +235,7 @@ def main(frame):
         frame.info["mode"] = mode
 
         if mode == "explore":
+            print("exploring")
             pre = []
             empty = []
             for r in range(rows):
@@ -244,6 +255,7 @@ def main(frame):
                                  )
             moved = False
             empty = sorted(empty, key=lambda x: (x[4], x[5]))
+            print(empty)
             for i in range(len(empty)):
                 c, d, a, b = empty[i][:4]
                 if armies[a][b] <= 1:
@@ -262,7 +274,7 @@ def main(frame):
                     moved = True
                     break
 
-            if not moved: #and turn % 2 == 0:
+            if not moved:  # and turn % 2 == 0:
                 mode_settings["explore"]["complete"] = True
 
             for (r, c) in cities:  # check so that we explore everything
@@ -362,7 +374,7 @@ def main(frame):
                 print(f"Enemy general found at: {generals_list[flag]}")
                 enemy_general = generals_list[flag]
 
-        frame.info["source"] = (a, b)
+        # frame.info["source"] = (a, b)
         wx.CallAfter(frame.Refresh)
     time.sleep(1)
     if won:

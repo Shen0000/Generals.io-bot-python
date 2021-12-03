@@ -107,13 +107,14 @@ class BasicEnv(gym.Env):
         cities = self.state['cities']
 
         if valid_move(r, c, adj_r, adj_c) and curr_army > 1:
+            curr_army -= 1
             if adj_tile == 0:  # moving to own tile
-                adj_army += curr_army - 1
+                adj_army += curr_army
                 curr_army = 1
             elif adj_tile == 1:  # moving onto enemy tile
-                our_army -= min(adj_army, curr_army-1)  # update total army for both players
-                enemy_army -= min(adj_army, curr_army-1)
-                adj_army -= curr_army - 1
+                our_army -= min(adj_army)  # update total army for both players
+                enemy_army -= min(adj_army)
+                adj_army -= curr_army
                 curr_army = 1
                 if adj_army < 0:
                     our_land += 1
@@ -121,18 +122,21 @@ class BasicEnv(gym.Env):
                     adj_tile = 0
                     adj_army = abs(adj_army)  # TODO: always < 0
             elif (adj_r, adj_c) in cities:  # moving to a neutral city tile
-                our_army -= min(adj_army, curr_army-1)  # update total army after using troops to capture city
-                adj_army -= curr_army - 1
+                assert adj_tile == -1
+                our_army -= min(adj_army, curr_army)  # update total army after using troops to capture city
+                adj_army -= curr_army
                 curr_army = 1
                 if adj_army < 0:
                     our_land += 1
                     adj_tile = 0
-                    adj_army = abs(adj_army)
-            elif adj_tile == -1: # moving to an empty tile
+                    adj_army = abs(adj_army)  # TODO: seems scuffed
+            elif adj_tile == -1:  # moving to an empty tile
                 adj_tile = 0
                 our_land += 1
-                adj_army += curr_army - 1
+                adj_army += curr_army
                 curr_army = 1
+            else:
+                curr_army += 1  # TODO: check if this case exists
 
         # Increment turn and armies
         turn = self.state['turn']
@@ -227,6 +231,35 @@ class BasicEnv(gym.Env):
                         fringe.append((a + dr, b + dc))
 
         return np.array(visited)
+
+    def get_masked_state(self):
+        visible = self._calc_visible()
+        tiles = self.state["tiles"]
+        armies = self.state["armies"]
+        cities = self.state["cities"]
+        generals = self.state["generals"]
+        for r in range(self.SIZE):
+            for c in range(self.SIZE):
+                if not visible[r][c]:
+                    if tiles[r][c] == -2:
+                        tiles[r][c] = -4
+                    elif (r, c) in cities:
+                        tiles[r][c] = -4
+                        cities.remove((r, c))
+                    else:
+                        tiles[r][c] = -3
+
+        armies *= visible
+        generals[1] = (-1, -1)
+
+        return {"tiles": tiles,
+                "armies": armies,
+                "cities": cities,
+                "generals": generals,
+                "turn": self.state['turn'],
+                "total_land": self.state['total_land'],
+                "total_army": self.state['total_army'],
+                }
 
     def update_state(self, state):
         self.state = state

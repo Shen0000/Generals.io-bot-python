@@ -1,6 +1,7 @@
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 OBSTACLES = [-2, -4]
 
+import numpy as np  # TODO: remove, for PyCharm debugger
 
 class GeneralUtils:
 
