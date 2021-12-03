@@ -177,7 +177,7 @@ class BasicEnv(gym.Env):
             city_indicators[city_r][city_c] = 1
 
         general_indicators = np.zeros(self.GRID_DIM, dtype=bool)
-        for gen_r, gen_c in self.state["cities"]:
+        for gen_r, gen_c in self.state["generals"]:
             general_indicators[gen_r][gen_c] = 1
 
         visible_indicators = self._calc_visible()
