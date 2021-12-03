@@ -40,12 +40,12 @@ class MyFrame(wx.Frame):
         dc = wx.PaintDC(self.panel)
         dc.DrawText(f"Mode: {self.info['mode']}", 900, 20)
         if self.state is not None:
-            tiles, armies, cities, swamps, generals_list, alive, army_size, land_size, all_cities, all_generals = \
-                self.state['tile_grid'], self.state['army_grid'], \
-                self.state['cities'], self.state['swamps'], self.state['generals'], \
-                self.state['alives'], self.state['armies'], self.state['lands'], \
-                self.state['all_cities'], self.state['all_generals']
+            tiles, armies, alives, cities, generals_list, army_size, land_size, all_cities, all_generals = \
+                self.state['tiles'], self.state['armies'], [True] * 2, \
+                self.state['cities'], self.state['generals'], \
+                self.state['total_army'], self.state['total_land'], self.state['cities'], self.state['generals']
 
+            self.state["usernames"] = ["test"] * 2
             for i, username in enumerate(self.state["usernames"]):
                 dc.DrawText(f"{username}'s Army: {army_size[i]}", 100, 700 + i * 20)
                 dc.DrawText(f"{username}'s Land: {land_size[i]}", 400, 700 + i * 20)
@@ -232,7 +232,7 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
         
-        frame.state = state
+        frame.state = env.get_masked_state()
         frame.info["mode"] = mode
 
         if mode == "explore":

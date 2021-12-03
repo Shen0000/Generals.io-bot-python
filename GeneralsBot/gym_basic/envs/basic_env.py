@@ -1,3 +1,4 @@
+import copy
 import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
@@ -234,10 +235,10 @@ class BasicEnv(gym.Env):
 
     def get_masked_state(self):
         visible = self._calc_visible()
-        tiles = self.state["tiles"]
-        armies = self.state["armies"]
-        cities = self.state["cities"]
-        generals = self.state["generals"]
+        tiles = copy.deepcopy(self.state["tiles"])
+        armies = copy.deepcopy(self.state["armies"])
+        cities = copy.deepcopy(self.state["cities"])
+        generals = copy.deepcopy(self.state["generals"])
         for r in range(self.SIZE):
             for c in range(self.SIZE):
                 if not visible[r][c]:
