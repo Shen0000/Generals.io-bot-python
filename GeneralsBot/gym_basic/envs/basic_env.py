@@ -144,10 +144,12 @@ class BasicEnv(gym.Env):
         turn += 1
         g1, g2 = self.state['generals']
         armies, tiles, tot_army = self.state['armies'], self.state['tiles'], self.state['total_army']
+        armies[r, c] = curr_army
+        armies[adj_r, adj_c] = adj_army
+        tiles[adj_r, adj_c] = adj_tile
+        
         our_army += 1
         enemy_army += 1
-        armies[g1[0], g1[1]] += 1
-        armies[g2[0], g2[1]] += 1
         if turn % 25 == 0: # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
@@ -158,12 +160,12 @@ class BasicEnv(gym.Env):
             if tiles[a, b] > -1:
                 tot_army[tiles[a, b]] += 1
                 armies[a, b] += 1
-        
+
         #update actual variables
 
-        self.state['armies'][r, c] = curr_army
-        self.state['armies'][adj_r, adj_c] = adj_army
-        self.state['tiles'][adj_r, adj_c] = adj_tile
+        armies[g1[0], g1[1]] += 1
+        armies[g2[0], g2[1]] += 1
+
         self.state['total_army'][0] = our_army
         self.state['total_army'][1] = enemy_army
         self.state['total_land'][0] = our_land
@@ -211,18 +213,11 @@ class BasicEnv(gym.Env):
                 if self.state["tiles"][row][col] == 0:
                     queue.append((row, col))
 
-        while len(queue) > 0 or len(fringe) > 0:
-            a, b = queue.pop(0) if len(queue) > 0 else fringe.pop(0)
-            if visited[a][b]:
-                continue
+        while len(queue) > 0:
+            a, b = queue.pop(0)
+            assert not visited[a][b] and self.state["tiles"][a][b] == 0
 
             visited[a][b] = True
-
-            if self.state["tiles"][a][b] != 0:
-                continue
-
-            if len(queue) == 0 and len(fringe) != 0:
-                continue
 
             for dr in range(-1, 2):
                 for dc in range(-1, 2):
@@ -230,6 +225,9 @@ class BasicEnv(gym.Env):
                         continue
                     if self.in_bounds(a + dr, b + dc) and not visited[a + dr][b + dc]:
                         fringe.append((a + dr, b + dc))
+
+        for (r, c) in fringe:
+            visited[r][c] = True
 
         return np.array(visited)
 

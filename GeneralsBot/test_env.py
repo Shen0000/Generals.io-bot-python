@@ -237,28 +237,28 @@ def main(frame):
 
         if mode == "explore":
             print("exploring")
-            pre = []
-            empty = []
+            all_adj_tiles = set()
+            empty_adj_tiles = []
             for r in range(rows):
                 for c in range(cols):
                     if tiles[r][c] == our_flag:
                         for offset in OFFSETS:
-                            pre.append((r + offset[0], c + offset[1]))
+                            all_adj_tiles.add((r + offset[0], c + offset[1]))
 
-            for (r, c) in pre:
+            for (r, c) in all_adj_tiles:
                 if not utils.in_bounds(r, c) or tiles[r][c] != -1:
                     continue
 
                 a, b, d = utils.closest(r, c, our_flag, tiles, armies, cities)
                 if (a, b, d) != (-1, -1, -1):
-                    empty.append((r, c, a, b, d,
+                    empty_adj_tiles.append((r, c, a, b, d,
                                   utils.manhattan_dist(r, c, general_r, general_c, state))
                                  )
             moved = False
-            empty = sorted(empty, key=lambda x: (x[4], x[5]))
-            print(empty)
-            for i in range(len(empty)):
-                c, d, a, b = empty[i][:4]
+            empty_adj_tiles = sorted(empty_adj_tiles, key=lambda x: (x[4], x[5]))
+            print(empty_adj_tiles)
+            for i in range(len(empty_adj_tiles)):
+                c, d, a, b = empty_adj_tiles[i][:4]
                 if armies[a][b] <= 1:
                     continue
 
