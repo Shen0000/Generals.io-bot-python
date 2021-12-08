@@ -94,6 +94,8 @@ class BasicEnv(gym.Env):
         Ideally also figure out how the action itself will work,
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
+        armies, tiles, tot_army = self.state['armies'], self.state['tiles'], self.state['total_army']
+
         if self.is_valid_move(action):
             offset = OFFSETS[action % 4]
             tile = action // 4
@@ -140,14 +142,15 @@ class BasicEnv(gym.Env):
                 else:
                     curr_army += 1  # TODO: check if this case exists
 
+            armies[r, c] = curr_army
+            armies[adj_r, adj_c] = adj_army
+            tiles[adj_r, adj_c] = adj_tile
+
         # Increment turn and armies
         turn = self.state['turn']
         turn += 1
         g1, g2 = self.state['generals']
-        armies, tiles, tot_army = self.state['armies'], self.state['tiles'], self.state['total_army']
-        armies[r, c] = curr_army
-        armies[adj_r, adj_c] = adj_army
-        tiles[adj_r, adj_c] = adj_tile
+        
         
         our_army += 1
         enemy_army += 1
