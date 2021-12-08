@@ -153,7 +153,7 @@ class BasicEnv(gym.Env):
 
         our_army += 1
         enemy_army += 1
-        
+
         if turn % 25 == 0: # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
@@ -296,6 +296,9 @@ class BasicEnv(gym.Env):
                       "generals": generals,  # TODO: generals, cities, tiles, armies should be generated
                       }
 
+    def get_obs(self):
+        return self._state_to_obs()
+    
     def render(self, mode='human'):
         pass
 
