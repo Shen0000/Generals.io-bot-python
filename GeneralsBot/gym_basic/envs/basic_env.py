@@ -94,6 +94,13 @@ class BasicEnv(gym.Env):
         Ideally also figure out how the action itself will work,
         but there will be a lot of edge cases (e.g. capture city) so I can do that
         """
+        our_army = self.state['total_army'][0]
+        enemy_army = self.state['total_army'][1]
+        our_land = self.state['total_land'][0]
+        enemy_land = self.state['total_land'][1]
+        cities = self.state['cities']
+        turn = self.state['turn']
+        g1, g2 = self.state['generals']
         armies, tiles, tot_army = self.state['armies'], self.state['tiles'], self.state['total_army']
 
         if self.is_valid_move(action):
@@ -104,11 +111,6 @@ class BasicEnv(gym.Env):
             curr_army = self.state['armies'][r, c]
             adj_army = self.state['armies'][adj_r, adj_c]
             adj_tile = self.state['tiles'][adj_r, adj_c]
-            our_army = self.state['total_army'][0]
-            enemy_army = self.state['total_army'][1]
-            our_land = self.state['total_land'][0]
-            enemy_land = self.state['total_land'][1]
-            cities = self.state['cities']
 
             if valid_move(r, c, adj_r, adj_c) and curr_army > 1:
                 curr_army -= 1
@@ -141,19 +143,17 @@ class BasicEnv(gym.Env):
                     curr_army = 1
                 else:
                     curr_army += 1  # TODO: check if this case exists
-
-            armies[r, c] = curr_army
-            armies[adj_r, adj_c] = adj_army
-            tiles[adj_r, adj_c] = adj_tile
+                
+                armies[r, c] = curr_army
+                armies[adj_r, adj_c] = adj_army
+                tiles[adj_r, adj_c] = adj_tile
 
         # Increment turn and armies
-        turn = self.state['turn']
-        turn += 1
-        g1, g2 = self.state['generals']
-        
-        
+        turn+=1
+
         our_army += 1
         enemy_army += 1
+        
         if turn % 25 == 0: # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
