@@ -5,6 +5,7 @@ from gym.utils import seeding
 import numpy as np
 import pathlib, sys
 import time
+import torch
 
 sys.path.insert(0, str(pathlib.Path(__file__).parents[3]))
 from GeneralsBot.make_map import create_map, pad_map
@@ -218,12 +219,12 @@ class BasicEnv(gym.Env):
         general_indicators *= visible_indicators
         empty_indicators *= visible_indicators
         mountain_indicators *= visible_indicators
-        out = np.stack([
+        np_out = np.stack([
             ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
             city_indicators, ownership * city_indicators, obstacle_indicators,
             fog_indicators, mountain_indicators, empty_indicators, general_indicators
         ])
-        return out
+        return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0, 0]  # TODO: add more features
 
     def _calc_visible(self):  # aka farthest6
         visited = [[False for _ in range(self.SIZE)] for _ in range(self.SIZE)]
