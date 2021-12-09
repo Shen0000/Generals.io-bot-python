@@ -190,7 +190,7 @@ def main(frame):
         print(state)
         print("-----")
         print(env.state)
-        masked_state = env.get_masked_state()
+        masked_state = env.denoise()
         turn, tiles, armies, cities, generals_list, army_size, land_size = \
             masked_state['turn'], masked_state['tiles'], masked_state['armies'], masked_state['cities'], \
             masked_state['generals'], masked_state['total_army'], masked_state['total_land']
@@ -232,7 +232,7 @@ def main(frame):
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
                 mode = "explore"
         
-        frame.state = env.get_masked_state()
+        frame.state = env.denoise()
         frame.info["mode"] = mode
 
         if mode == "explore":

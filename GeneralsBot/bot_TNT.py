@@ -1,6 +1,6 @@
 from init_game import general
 import logging
-from generals_client import generals
+import generals
 import math
 
 INF = 1e9

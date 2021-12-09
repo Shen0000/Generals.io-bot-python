@@ -262,20 +262,47 @@ class BasicEnv(gym.Env):
 
     def denoise(self):
         obs = self._state_to_obs()  # np.array of shape (10, 28, 28)
-
-        ownership = obs[0]
-        masked_armies = obs[1]
-
-
+        """
+        out = np.stack([
+            ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
+            city_indicators, ownership * city_indicators, obstacle_indicators,
+            fog_indicators, mountain_indicators, empty_indicators, general_indicators
+        ])
+        """
+        general_locations = [(-1, -1), (-1, -1)]
+        cities = []
+        tiles = []
+        ownership, masked_armies, armies, city_indicators, ownership_cities, obstacles, fog, mountain, empty, generals = obs
+        for i in range(28):
+            tiles.append([])
+            for j in range(28):
+                if generals[i][j]:
+                    general_locations[ownership[i][j]] = (i, j)
+                if city_indicators[i][j]:
+                    cities.append((i, j))
+                if fog[i][j]:
+                    if obstacles[i][j]:
+                        tiles[i].append(-4)
+                    else:
+                        tiles[i].append(-3)
+                elif mountain[i][j]:
+                    tiles[i].append(-2)
+                elif empty[i][j]:
+                    tiles[i].append(-1)
+                else:
+                    tiles[i].append(ownership[i][j])
+                
+                
+                
 
         # get_masked_state
-        return {"tiles": 0,
+        return {"tiles": tiles,
                 "armies": masked_armies,
-                "cities": 0,
-                "generals": 0,
+                "cities": cities,
+                "generals": general_locations,
                 "turn": 0,  # idk
-                "total_land": 0,
-                "total_army": 0,
+                "total_land": [0, 0],
+                "total_army": [0, 0],
                 }
 
     def update_state(self, state):
