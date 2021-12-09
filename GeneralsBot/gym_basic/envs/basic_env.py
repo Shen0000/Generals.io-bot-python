@@ -260,6 +260,24 @@ class BasicEnv(gym.Env):
                 "total_army": self.state['total_army'],
                 }
 
+    def denoise(self):
+        obs = self._state_to_obs()  # np.array of shape (10, 28, 28)
+
+        ownership = obs[0]
+        masked_armies = obs[1]
+
+
+
+        # get_masked_state
+        return {"tiles": 0,
+                "armies": masked_armies,
+                "cities": 0,
+                "generals": 0,
+                "turn": 0,  # idk
+                "total_land": 0,
+                "total_army": 0,
+                }
+
     def update_state(self, state):
         self.state = state
 
