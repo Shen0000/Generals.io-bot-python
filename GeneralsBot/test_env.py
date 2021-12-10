@@ -10,9 +10,15 @@ from flood_fill import GeneralUtils
 
 logging.basicConfig(level=logging.DEBUG)
 
+from gym.envs.registration import register
+register(
+    id='basic-v0',
+    entry_point='gym_basic.envs:BasicEnv',
+)
+
 env = gym.make("gym_basic:basic-v0")
 env.reset()
-env.step((1, 1, 1, 2))
+env.step(0)
 # tiles, armies, cities, generals = itemgetter('tiles', 'armies', 'cities', 'generals')(env.state)
 
 OFFSETS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -157,13 +163,21 @@ class MyFrame(wx.Frame):
         self.Show(True)
 
 
+def tuple_to_action(a, b, c, d):
+    """ Going from (a, b) to (c, d) """
+    mag = (a * env.SIZE + b)
+    delta = c - a, d - b
+    assert delta in OFFSETS
+    dir = OFFSETS.index(delta)
+    return mag * 4 + dir
+
+
 def main(frame):
     mode = "explore"
     main_army, enemy_general = None, None
     mode_settings = {"explore": {"complete": False}, "consolidate": {"queued_path": []}, "cities": {"queued_path": [], "complete": False, "passed": False}, "scout": {"queued_path": [], "passed": False}}
     all_cities, all_generals = set(), set()
     won = False
-    env.step((0, 0, 0, 0))
     tiles, armies, cities, generals, land, army, turn = \
         itemgetter('tiles', 'armies', 'cities', 'generals', 'total_land', 'total_army', 'turn')(env.state)
     generals[1] = (-1, -1)
@@ -271,7 +285,7 @@ def main(frame):
                 moves = sorted(moves, key=lambda x: x[2])
                 if len(moves):
                     bm = moves[0]
-                    env.step((a, b, bm[0], bm[1]))
+                    env.step(tuple_to_action(a, b, bm[0], bm[1]))
                     moved = True
                     break
 
@@ -290,7 +304,7 @@ def main(frame):
             frame.info["queued_path"] = mode_settings["consolidate"]["queued_path"]
             a, b = mode_settings["consolidate"]["queued_path"].pop(0)
             c, d = mode_settings["consolidate"]["queued_path"][0]
-            env.step((a, b, c, d))
+            env.step(tuple_to_action(a, b, c, d))
 
             if armies[general_r][general_c] > 300 and state["armies"][1 - our_flag] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
@@ -332,7 +346,7 @@ def main(frame):
             frame.info["queued_path"] = mode_settings["cities"]["queued_path"]
             a, b = mode_settings["cities"]["queued_path"].pop(0)
             c, d = mode_settings["cities"]["queued_path"][0]
-            env.step((a, b, c, d))
+            env.step(tuple_to_action(a, b, c, d))
 
             if armies[general_r][general_c] > 300 and state["armies"][enemy_flags[0]] * 0.5 - armies[general_r][general_c] < turn / 2:
                 mode = "scout"
@@ -368,7 +382,7 @@ def main(frame):
             frame.info["queued_path"] = mode_settings["scout"]["queued_path"]
             a, b = mode_settings["scout"]["queued_path"].pop(0)
             c, d = mode_settings["scout"]["queued_path"][0]
-            env.step((a, b, c, d))
+            env.step(tuple_to_action(a, b, c, d))
 
         for flag in enemy_flags:
             if generals_list[flag] in all_generals and alive[flag]:

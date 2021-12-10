@@ -55,7 +55,7 @@ class BasicEnv(gym.Env):
         self.SIZE = 28
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
-        self.action_space = spaces.Discrete(self.SIZE**2 * 4)
+        self.action_space = spaces.Discrete(self.SIZE ** 2 * 4)
         self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=float),
                                             np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=float))
 
@@ -72,14 +72,13 @@ class BasicEnv(gym.Env):
         # self._state_to_obs()
 
     def step(self, action):
-        # (r, c, adj_r, adj_c) = action
         assert self.action_space.contains(action)
 
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
         prev_land = self.state["total_land"][0]
         self._update_states(action)
         obs = self._state_to_obs()
-        # time.sleep(0.05)
+        time.sleep(0.05)
         return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > 25, None  # obs, reward, done, info
 
     def _update_states(self, action):
@@ -144,29 +143,29 @@ class BasicEnv(gym.Env):
                     curr_army = 1
                 else:
                     curr_army += 1  # TODO: check if this case exists
-                
+
                 armies[r, c] = curr_army
                 armies[adj_r, adj_c] = adj_army
                 tiles[adj_r, adj_c] = adj_tile
 
         # Increment turn and armies
-        turn+=1
+        turn += 1
 
         our_army += 1
         enemy_army += 1
 
-        if turn % 25 == 0: # every 25 turns all land is increased by 1
+        if turn % 25 == 0:  # every 25 turns all land is increased by 1
             for row in range(self.SIZE):
                 for col in range(self.SIZE):
                     if tiles[row][col] > -1:
-                        armies[row][col]+=1
+                        armies[row][col] += 1
                         tot_army[tiles[row][col]] += 1
         for (a, b) in cities:
             if tiles[a, b] > -1:
                 tot_army[tiles[a, b]] += 1
                 armies[a, b] += 1
 
-        #update actual variables
+        # update actual variables
 
         armies[g1[0], g1[1]] += 1
         armies[g2[0], g2[1]] += 1
@@ -187,7 +186,7 @@ class BasicEnv(gym.Env):
         tile = action // 4
         r, c = tile // self.SIZE, tile % self.SIZE
         adj_r, adj_c = r + offset[0], c + offset[1]
-        return valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.in_bounds(adj_r, adj_c)
+        return valid_move(r, c, adj_r, adj_c) and self.state['armies'][r, c] > 1 and self.state["tiles"][r, c] == 0 and self.in_bounds(adj_r, adj_c)
 
     def is_good_move(self, action, collect=False):
         offset = OFFSETS[action % 4]
@@ -196,7 +195,7 @@ class BasicEnv(gym.Env):
         adj_r, adj_c = r + offset[0], c + offset[1]
         return self.is_valid_move(action) and (self.state['tiles'][r][c] == 0) and \
                (self.state['tiles'][adj_r][adj_c] == -1 or (collect and self.state['tiles'][adj_r][adj_c] == -1 == 0)) \
-                and self.state['armies'][r][c] > 1
+               and self.state['armies'][r][c] > 1
 
     def _state_to_obs(self, device="cpu"):
         _tile_to_owner = np.vectorize(lambda tile: 0 if tile < 0 else (1 if tile == 0 else -1))
@@ -224,7 +223,8 @@ class BasicEnv(gym.Env):
             city_indicators, ownership * city_indicators, obstacle_indicators,
             fog_indicators, mountain_indicators, empty_indicators, general_indicators
         ])
-        return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0, 0]  # TODO: add more features
+        return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0,
+                                                                      0]  # TODO: add more features
 
     def _calc_visible(self):  # aka farthest6
         visited = [[False for _ in range(self.SIZE)] for _ in range(self.SIZE)]
@@ -282,6 +282,48 @@ class BasicEnv(gym.Env):
                 "total_army": self.state['total_army'],
                 }
 
+    def denoise(self):
+        obs = self._state_to_obs()[0].numpy().squeeze(0)  # np.array of shape (10, 28, 28)
+        """
+        out = np.stack([
+            ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
+            city_indicators, ownership * city_indicators, obstacle_indicators,
+            fog_indicators, mountain_indicators, empty_indicators, general_indicators
+        ])
+        """
+        general_locations = [(-1, -1), (-1, -1)]
+        cities = []
+        tiles = []
+        ownership, masked_armies, armies, city_indicators, ownership_cities, obstacles, fog, mountain, empty, generals = obs
+        for i in range(self.SIZE):
+            tiles.append([])
+            for j in range(self.SIZE):
+                if generals[i][j]:
+                    general_locations[int(ownership[i][j])] = (i, j)
+                if city_indicators[i][j]:
+                    cities.append((i, j))
+                if fog[i][j]:
+                    if obstacles[i][j]:
+                        tiles[i].append(-4)
+                    else:
+                        tiles[i].append(-3)
+                elif mountain[i][j]:
+                    tiles[i].append(-2)
+                elif empty[i][j]:
+                    tiles[i].append(-1)
+                else:
+                    tiles[i].append(ownership[i][j])
+
+        # get_masked_state
+        return {"tiles": tiles,
+                "armies": masked_armies,
+                "cities": cities,
+                "generals": general_locations,
+                "turn": 0,  # idk
+                "total_land": [0, 0],
+                "total_army": [0, 0],
+                }
+
     def update_state(self, state):
         self.state = state
 
@@ -299,7 +341,7 @@ class BasicEnv(gym.Env):
 
     def get_obs(self):
         return self._state_to_obs()
-    
+
     def render(self, mode='human'):
         pass
 
