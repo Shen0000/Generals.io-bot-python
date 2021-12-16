@@ -51,10 +51,11 @@ def valid_move(r, c, r2, c2):
 class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, num_turns=2):
         self.SIZE = 28
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
+        self.num_turns = num_turns
         self.action_space = spaces.Discrete(self.SIZE ** 2 * 4)
         self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=float),
                                             np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=float))
@@ -78,7 +79,7 @@ class BasicEnv(gym.Env):
         prev_land = self.state["total_land"][0]
         self._update_states(action)
         obs = self._state_to_obs()
-        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > 125, None  # obs, reward, done, info
+        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > self.num_turns, None  # obs, reward, done, info
 
     def _update_states(self, action):
         """
@@ -337,6 +338,9 @@ class BasicEnv(gym.Env):
                       "total_army": [0, 0],
                       "generals": generals,  # TODO: generals, cities, tiles, armies should be generated
                       }
+
+    def update_turns(self, num_turns):
+        self.num_turns = num_turns
 
     def get_obs(self):
         return self._state_to_obs()
