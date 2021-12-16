@@ -50,6 +50,7 @@ def flood(grid, flag, generalloc):
 
 
 def create_map(data):
+    random.seed(123)
     length, width, city_density, swamp_density, mountain_density, num_players = data
     assert num_players > 1, "can't play with only one player"
     grid, armies, cities, generalloc = [], [], [], []
@@ -142,6 +143,7 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
         tiles, armies - np.array()
         GRID_DIM - tuple of (num_rows, num_cols)
     """
+    random.seed(123)
     assert tiles.shape == armies.shape
     padded_tiles = np.full(GRID_DIM, -2, dtype=int)
     padded_armies = np.zeros(GRID_DIM, dtype=int)
