@@ -57,8 +57,8 @@ class BasicEnv(gym.Env):
         self.EMBED_SIZE = 10
         self.num_turns = num_turns
         self.action_space = spaces.Discrete(self.SIZE ** 2 * 4)
-        self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=float),
-                                            np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=float))
+        self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=np.float32),
+                                            np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=np.float32))
 
         out = create_map([0.5, 0.5, 1, 0, 1, 2])
         tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
@@ -150,6 +150,7 @@ class BasicEnv(gym.Env):
 
         # Increment turn and armies
         turn += 1
+        self.num_turns += 1
 
         our_army += 1
         enemy_army += 1
