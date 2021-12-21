@@ -150,7 +150,6 @@ class BasicEnv(gym.Env):
 
         # Increment turn and armies
         turn += 1
-        self.num_turns += 1
 
         our_army += 1
         enemy_army += 1
