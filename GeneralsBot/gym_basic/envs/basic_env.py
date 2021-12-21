@@ -79,7 +79,7 @@ class BasicEnv(gym.Env):
         prev_land = self.state["total_land"][0]
         self._update_states(action)
         obs = self._state_to_obs()
-        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] > self.num_turns, None  # obs, reward, done, info
+        return obs, self.state["total_land"][0] - prev_land, self.state["turn"] >= self.num_turns, None  # obs, reward, done, info
 
     def _update_states(self, action):
         """
