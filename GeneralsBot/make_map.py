@@ -3,9 +3,9 @@ import numpy as np
 import random
 import sys
 
-MIN, MAX = 16, 20 #28
+# MIN, MAX = 16, 20 #28
 # MIN = 28
-# MIN, MAX = 10, 12
+MIN, MAX = 6, 8
 CMIN, CMAX = 40, 50
 sys.setrecursionlimit(10000)
 
@@ -124,7 +124,8 @@ def valid(grid, generalloc):
         for j in range(i + 1, n):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
-            if dist <= 10:
+            # if dist <= 10:
+            if dist <= 3:
                 # print("distance invalid, remaking map")
                 return False
 
