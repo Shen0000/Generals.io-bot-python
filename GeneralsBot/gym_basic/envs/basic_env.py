@@ -52,7 +52,7 @@ class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self, num_turns=2):
-        self.SIZE = 28
+        self.SIZE = 10
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
         self.num_turns = num_turns
