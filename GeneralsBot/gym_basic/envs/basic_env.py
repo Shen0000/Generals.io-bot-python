@@ -51,14 +51,14 @@ class BasicEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        self.SIZE = 28
+        self.SIZE = 10
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
         self.action_space = spaces.Discrete(self.SIZE**2 * 4)
         self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=float),
                                             np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=float))
 
-        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        out = create_map([0.5, 0.5, 0.1, 0, 0.1, 2])
         tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
         self.state = {"tiles": tiles,
                       "armies": armies,
@@ -273,9 +273,9 @@ class BasicEnv(gym.Env):
         cities = []
         tiles = []
         ownership, masked_armies, armies, city_indicators, ownership_cities, obstacles, fog, mountain, empty, generals = obs
-        for i in range(28):
+        for i in range(self.SIZE):
             tiles.append([])
-            for j in range(28):
+            for j in range(self.SIZE):
                 if generals[i][j]:
                     general_locations[ownership[i][j]] = (i, j)
                 if city_indicators[i][j]:
@@ -291,9 +291,6 @@ class BasicEnv(gym.Env):
                     tiles[i].append(-1)
                 else:
                     tiles[i].append(ownership[i][j])
-                
-                
-                
 
         # get_masked_state
         return {"tiles": tiles,

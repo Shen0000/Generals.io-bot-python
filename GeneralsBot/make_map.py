@@ -3,9 +3,9 @@ import numpy as np
 import random
 import sys
 
-MIN, MAX = 16, 20 #28
+# MIN, MAX = 16, 20 #28
 # MIN = 28
-# MIN, MAX = 10, 12
+MIN, MAX = 6, 8
 CMIN, CMAX = 40, 50
 sys.setrecursionlimit(10000)
 
@@ -50,6 +50,7 @@ def flood(grid, flag, generalloc):
 
 
 def create_map(data):
+    random.seed(23)
     length, width, city_density, swamp_density, mountain_density, num_players = data
     assert num_players > 1, "can't play with only one player"
     grid, armies, cities, generalloc = [], [], [], []
@@ -94,7 +95,8 @@ def create_map(data):
         armies[gen_r][gen_c] = 1
         return np.array(grid), cities, np.array(armies), generalloc
     else:
-        return create_map(data)
+        # return create_map(data)
+        return
 
 
 def valid(grid, generalloc):
@@ -124,7 +126,7 @@ def valid(grid, generalloc):
         for j in range(i + 1, n):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
-            if dist <= 10:
+            if dist <= 3:
                 print("distance invalid, remaking map")
                 return False
 
@@ -143,6 +145,7 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
         tiles, armies - np.array()
         GRID_DIM - tuple of (num_rows, num_cols)
     """
+    random.seed(2)
     assert tiles.shape == armies.shape
     padded_tiles = np.full(GRID_DIM, -2, dtype=int)
     padded_armies = np.zeros(GRID_DIM, dtype=int)
@@ -165,14 +168,9 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
 
 
 if __name__ == "__main__":
-    length = 0.50
-    width = 0.50
-    city_density = 1
-    swamp_density = 0
-    mountain_density = 1
-    num_players = 2
-    data = [length, width, city_density, swamp_density, mountain_density, num_players]
-    grid, cities, armies, generalslocations = create_map(data)
+    for i in range(100):
+        print(i)
+        create_map([0.5, 0.5, 0.1, 0, 0.1, 2], seed=i)
     # print(grid, cities, armies, generalslocations)
 
 '''
