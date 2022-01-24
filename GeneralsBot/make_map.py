@@ -5,7 +5,7 @@ import sys
 
 # MIN, MAX = 16, 20 #28
 # MIN = 28
-MIN, MAX = 6, 8
+MIN, MAX = 10, 10
 CMIN, CMAX = 40, 50
 sys.setrecursionlimit(10000)
 
@@ -49,14 +49,14 @@ def flood(grid, flag, generalloc):
     return components, map
 
 
-def create_map(data):
-    random.seed(23)
+def create_map(data, seed=82):
+    random.seed(seed)
     length, width, city_density, swamp_density, mountain_density, num_players = data
     assert num_players > 1, "can't play with only one player"
     grid, armies, cities, generalloc = [], [], [], []
     rows, cols = 0, 0
-    rows = MIN + int(MIN*length) + random.randint(-2, 2)
-    cols = MIN + int(MIN*width) + random.randint(-2, 2)
+    rows = MIN #+ int(MIN*length) + random.randint(-2, 2)
+    cols = MIN #+ int(MIN*width) + random.randint(-2, 2)
     rows = min(max(rows, MIN), MAX) # make sure everything is in bounds
     cols = min(max(cols, MIN), MAX)
     for i in range(rows):
@@ -96,6 +96,7 @@ def create_map(data):
         return np.array(grid), cities, np.array(armies), generalloc
     else:
         # return create_map(data)
+        # raise ValueError
         return
 
 
@@ -126,7 +127,7 @@ def valid(grid, generalloc):
         for j in range(i + 1, n):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
-            if dist <= 3:
+            if dist <= 4:
                 print("distance invalid, remaking map")
                 return False
 
