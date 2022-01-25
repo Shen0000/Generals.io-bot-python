@@ -1,3 +1,0 @@
-[submodule "GeneralsBot/transformers"]
-	path = GeneralsBot/transformers
-	url = https://github.com/huggingface/transformers.git
