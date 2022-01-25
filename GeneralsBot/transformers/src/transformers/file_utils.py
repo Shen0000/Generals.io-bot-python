@@ -50,7 +50,7 @@ from tqdm.auto import tqdm
 import requests
 from filelock import FileLock
 from huggingface_hub import HfFolder, Repository, create_repo, list_repo_files, whoami
-from transformers.utils.versions import importlib_metadata
+from .utils.versions import importlib_metadata
 
 from . import __version__
 from .utils import logging
