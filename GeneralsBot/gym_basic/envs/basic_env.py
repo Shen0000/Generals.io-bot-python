@@ -328,7 +328,7 @@ class BasicEnv(gym.Env):
         self.state = state
 
     def reset(self):
-        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        out = create_map([0.5, 0.5, 0.1, 0, 0.1, 2])
         tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
         self.state = {"tiles": tiles,
                       "armies": armies,
