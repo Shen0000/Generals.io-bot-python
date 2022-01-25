@@ -156,8 +156,8 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
     r0 = random.randint(0, dr)  if dr > 0 else 0
     c0 = random.randint(0, dc) if dc > 0 else 0
     padded_tiles[r0:r0+num_rows, c0:c0+num_cols] = tiles
-    print(padded_tiles[r0:r0+num_rows, c0:c0+num_cols])
-    print(tiles)
+    # print(padded_tiles[r0:r0+num_rows, c0:c0+num_cols])
+    # print(tiles)
     padded_armies[r0:r0+num_rows, c0:c0+num_cols] = armies
     shifted_cities = []
     for r, c in cities:

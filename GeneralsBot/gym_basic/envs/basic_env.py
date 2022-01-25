@@ -219,12 +219,12 @@ class BasicEnv(gym.Env):
         empty_indicators *= visible_indicators
         mountain_indicators *= visible_indicators
         np_out = np.stack([
-            ownership, self.state["armies"] * visible_indicators, ownership * self.state["armies"],
-            city_indicators, ownership * city_indicators, obstacle_indicators,
-            fog_indicators, mountain_indicators, empty_indicators, general_indicators
+            ownership, self.state["armies"], city_indicators, obstacle_indicators,
+            visible_indicators, mountain_indicators, empty_indicators, general_indicators
         ])
-        return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0,
-                                                                      0]  # TODO: add more features
+        # return torch.tensor(np_out).to(device).unsqueeze(0).float(), [self.state["turn"] % 25, 0, 0,
+        #                                                               0]  # TODO: add more features
+        return torch.tensor(np_out).to(device).unsqueeze(0).float()
 
     def _calc_visible(self):  # aka farthest6
         visited = [[False for _ in range(self.SIZE)] for _ in range(self.SIZE)]
