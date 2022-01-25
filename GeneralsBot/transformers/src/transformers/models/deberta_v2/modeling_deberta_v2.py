@@ -16,7 +16,7 @@
 
 import math
 from collections.abc import Sequence
-from functools import cache  # KZ
+from functools import lru_cache  # KZ
 
 import numpy as np
 import torch
@@ -535,7 +535,7 @@ def make_log_bucket_position(relative_pos, bucket_size, max_position):
     return bucket_pos
 
 
-@cache
+@lru_cache(maxsize=None)
 def build_rel_pos_ids(query_size, key_size):  # KZ
     grid_dim = math.isqrt(query_size)
     assert query_size == key_size == grid_dim ** 2
