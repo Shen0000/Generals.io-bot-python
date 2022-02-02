@@ -55,12 +55,13 @@ class BasicEnv(gym.Env):
         self.SIZE = 10
         self.GRID_DIM = (self.SIZE, self.SIZE)
         self.EMBED_SIZE = 10
+        self.seed = -1
         self.num_turns = num_turns
         self.action_space = spaces.Discrete(self.SIZE ** 2 * 4)
         self.observation_space = spaces.Box(np.full((self.GRID_DIM + (self.EMBED_SIZE,)), -1, dtype=np.float32),
                                             np.full((self.GRID_DIM + (self.EMBED_SIZE,)), 1, dtype=np.float32))
 
-        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        out = create_map([0.5, 0.5, 0.1, 0, 0.1, 2], self.seed)
         tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
         self.state = {"tiles": tiles,
                       "armies": armies,
@@ -74,7 +75,8 @@ class BasicEnv(gym.Env):
 
     def step(self, action):
         assert self.action_space.contains(action)
-
+        # comment out time.sleep when running colab
+        # time.sleep(0.25)
         # if self.in_bounds(adj_r, adj_c):  # TODO: make sure (r, c) guaranteed to be in bounds
         prev_land = self.state["total_land"][0]
         self._update_states(action)
@@ -328,7 +330,7 @@ class BasicEnv(gym.Env):
         self.state = state
 
     def reset(self):
-        out = create_map([0.5, 0.5, 1, 0, 1, 2])
+        out = create_map([0.5, 0.5, 0.1, 0, 0.1, 2], self.seed)
         tiles, armies, cities, generals = pad_map(*out, self.GRID_DIM)
         self.state = {"tiles": tiles,
                       "armies": armies,
@@ -354,6 +356,8 @@ class BasicEnv(gym.Env):
     def in_bounds(self, r=0, c=0):
         return 0 <= r < self.SIZE and 0 <= c < self.SIZE
 
-
+    def set_seed(self, seed):
+        self.seed = seed
+    
 if __name__ == "__main__":
     env = BasicEnv()

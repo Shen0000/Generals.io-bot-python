@@ -49,9 +49,10 @@ def flood(grid, flag, generalloc):
     return components, map
 
 
-def create_map(data, seed=82):
-    random.seed(seed)
+def create_map(data, seed):
     length, width, city_density, swamp_density, mountain_density, num_players = data
+    if seed>=0:
+        random.seed(seed)
     assert num_players > 1, "can't play with only one player"
     grid, armies, cities, generalloc = [], [], [], []
     rows, cols = 0, 0
@@ -95,9 +96,11 @@ def create_map(data, seed=82):
         armies[gen_r][gen_c] = 1
         return np.array(grid), cities, np.array(armies), generalloc
     else:
-        # return create_map(data)
-        # raise ValueError
-        return
+        if seed < 0:
+            return create_map(data, seed)
+        else:
+            raise ValueError
+        # return
 
 
 def valid(grid, generalloc):
@@ -146,7 +149,7 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
         tiles, armies - np.array()
         GRID_DIM - tuple of (num_rows, num_cols)
     """
-    random.seed(2)
+    # random.seed(2)
     assert tiles.shape == armies.shape
     padded_tiles = np.full(GRID_DIM, -2, dtype=int)
     padded_armies = np.zeros(GRID_DIM, dtype=int)
@@ -156,8 +159,6 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
     r0 = random.randint(0, dr)  if dr > 0 else 0
     c0 = random.randint(0, dc) if dc > 0 else 0
     padded_tiles[r0:r0+num_rows, c0:c0+num_cols] = tiles
-    print(padded_tiles[r0:r0+num_rows, c0:c0+num_cols])
-    print(tiles)
     padded_armies[r0:r0+num_rows, c0:c0+num_cols] = armies
     shifted_cities = []
     for r, c in cities:
@@ -173,7 +174,7 @@ def pad_map(tiles, cities, armies, generals, GRID_DIM):  # TODO: flip to normal 
 if __name__ == "__main__":
     for i in range(100):
         print(i)
-        create_map([0.5, 0.5, 0.1, 0, 0.1, 2], seed=i)
+        create_map([1, 1, 0.1, 0, 0.1, 2], seed=i)
     # print(grid, cities, armies, generalslocations)
 
 '''

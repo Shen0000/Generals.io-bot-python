@@ -200,10 +200,6 @@ def main(frame):
         rows = env.SIZE
         cols = env.SIZE
         utils = GeneralUtils(rows, cols)
-
-        print(state)
-        print("-----")
-        print(env.state)
         masked_state = env.get_masked_state()
         turn, tiles, armies, cities, generals_list, army_size, land_size = \
             masked_state['turn'], masked_state['tiles'], masked_state['armies'], masked_state['cities'], \
@@ -240,7 +236,6 @@ def main(frame):
                 if mode_settings["cities"]["complete"]:
                     mode = "consolidate"
                 else:
-                    print("here111")
                     # assert False
                     mode = "cities"
             elif len(mode_settings["cities"]["queued_path"]) == 0 and mode == "cities":
@@ -250,7 +245,6 @@ def main(frame):
         frame.info["mode"] = mode
 
         if mode == "explore":
-            print("exploring")
             all_adj_tiles = set()
             empty_adj_tiles = []
             for r in range(rows):
@@ -270,7 +264,6 @@ def main(frame):
                                  )
             moved = False
             empty_adj_tiles = sorted(empty_adj_tiles, key=lambda x: (x[4], x[5]))
-            print(empty_adj_tiles)
             for i in range(len(empty_adj_tiles)):
                 c, d, a, b = empty_adj_tiles[i][:4]
                 if armies[a][b] <= 1:
