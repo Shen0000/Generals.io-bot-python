@@ -116,7 +116,7 @@ def valid(grid, generalloc):
         elif loc != num:
             valid = False
     if not valid:
-        print("Generals are not in the same component, remaking map")
+        # print("Generals are not in the same component, remaking map")
         return False
     empty_tiles = 0
     for component in components:
@@ -131,11 +131,12 @@ def valid(grid, generalloc):
             y = generalloc[j]
             dist = math.sqrt((x[0] - y[0])**2 + (x[1] - y[1])**2)
             if dist <= 4:
-                print("distance invalid, remaking map")
+                # print("distance invalid, remaking map")
                 return False
 
     if frac < .90:
-        print("remaking map")
+        pass
+        # print("remaking map")
 
     return frac >= .90
 
